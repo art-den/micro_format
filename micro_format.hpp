@@ -10,6 +10,7 @@ namespace impl {
 enum class FormatArgType : uint8_t
 {
 	Undef,
+	Char,
 	CharPtr,
 	Int8,
 	Int16,
@@ -19,7 +20,6 @@ enum class FormatArgType : uint8_t
 	UInt32,
 	Bool,
 	Pointer,
-	Char,
 	Float,
 };
 

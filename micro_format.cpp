@@ -52,6 +52,13 @@ static bool is_char_arg_type(FormatArgType arg_type)
 		(arg_type == FormatArgType::Char);
 }
 
+static bool is_boolarg_type(FormatArgType arg_type)
+{
+	return
+		(arg_type == FormatArgType::Bool);
+}
+
+
 static void put_char(FormatCtx& ctx, char chr)
 {
 	ctx.callback(ctx.data, chr);
@@ -62,6 +69,11 @@ static void print_raw_string(FormatCtx& ctx, const char *text)
 {
 	while (*text)
 		put_char(ctx, *text++);
+}
+
+static void print_error(FormatCtx& ctx)
+{
+	print_raw_string(ctx, "{{error}}");
 }
 
 static int strlen(const char *str)
@@ -231,10 +243,13 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 	bool is_integer_presentation =
 		(f == 'b') || (f == 'd') || (f == 'o') || (f == 'x');
 
-	if (is_integer_arg_type(type) && !is_integer_presentation && (f != 0))
+	if (is_integer_arg_type(type) && !is_integer_presentation && (f != 'c') && (f != 0))
 		return false;
 
-	if (is_char_arg_type(type) && !is_integer_presentation && (f != 0))
+	if (is_char_arg_type(type) && !is_integer_presentation && (f != 'c') && (f != 0))
+		return false;
+
+	if (is_boolarg_type(type) && !is_integer_presentation && (f != 0))
 		return false;
 
 	return true;
@@ -366,6 +381,7 @@ static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& form
 	}
 }
 
+
 static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const char* str, bool is_negative)
 {
 	int len = strlen(str);
@@ -375,10 +391,12 @@ static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, con
 	print_trailing_spaces(ctx, format_spec, len);
 }
 
-static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const char* str)
+static void print_char_impl(FormatCtx& ctx, const FormatSpec& format_spec, char value)
 {
+	char str[] = { value , 0 };
 	print_string_impl(ctx, format_spec, str, false);
 }
+
 
 static void print_uint_impl(FormatCtx& ctx, unsigned value, unsigned base, bool upper_case)
 {
@@ -432,16 +450,49 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 	print_trailing_spaces(ctx, format_spec, len);
 }
 
+static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value)
+{
+	if ((format_spec.format == 's') || (format_spec.format == 0))
+		print_char_impl(ctx, format_spec, value);
+
+	else
+		print_int_generic(ctx, format_spec, (int)value, false);
+}
+
+static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const char* str)
+{
+	print_string_impl(ctx, format_spec, str, false);
+}
+
 static void print_int(FormatCtx& ctx, const FormatSpec& format_spec, int value)
 {
 	bool is_negative = value < 0;
-	if (is_negative) value = -value;
-	print_int_generic(ctx, format_spec, value, is_negative);
+
+	if (format_spec.format != 'c')
+	{
+		if (is_negative) value = -value;
+		print_int_generic(ctx, format_spec, value, is_negative);
+	}
+	else
+	{
+		if (is_negative || (value > 255))
+			print_error(ctx);
+		else
+			print_char_impl(ctx, format_spec, (char)value);
+	}
 }
 
 static void print_uint(FormatCtx& ctx, const FormatSpec& format_spec, unsigned value)
 {
-	print_int_generic(ctx, format_spec, value, false);
+	if (format_spec.format != 'c')
+		print_int_generic(ctx, format_spec, value, false);
+	else
+	{
+		if (value > 255)
+			print_error(ctx);
+		else
+			print_char_impl(ctx, format_spec, (char)value);
+	}
 }
 
 static void print_bool(FormatCtx& ctx, const FormatSpec& format_spec, bool value)
@@ -457,16 +508,6 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const v
 	print_int_generic(ctx, format_spec, (unsigned)pointer, false);
 }
 
-static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value)
-{
-	if ((format_spec.format == 's') || (format_spec.format == 0))
-	{
-		char str[] = { value , 0 };
-		print_string_impl(ctx, format_spec, str, false);
-	}
-	else
-		print_int_generic(ctx, format_spec, (int)value, false);
-}
 
 #ifdef MICRO_FORMAT_FLOAT
 
@@ -589,6 +630,10 @@ static void print_by_format_specifier(FormatCtx& ctx, const FormatSpec& format_s
 
 	switch (ctx.args[format_spec.index].type)
 	{
+	case FormatArgType::Char:
+		print_char(ctx, format_spec, *(const char*)arg_pointer);
+		break;
+
 	case FormatArgType::CharPtr:
 		print_string(ctx, format_spec, (const char*)arg_pointer);
 		break;
@@ -625,10 +670,6 @@ static void print_by_format_specifier(FormatCtx& ctx, const FormatSpec& format_s
 		print_pointer(ctx, format_spec, arg_pointer);
 		break;
 
-	case FormatArgType::Char:
-		print_char(ctx, format_spec, *(const char*)arg_pointer);
-		break;
-
 #ifdef MICRO_FORMAT_FLOAT
 	case FormatArgType::Float:
 		print_float(ctx, format_spec, *(const float*)arg_pointer);
@@ -663,7 +704,7 @@ void format_impl(FormatCtx& ctx, const char* format)
 					index++;
 				}
 				else
-					print_raw_string(ctx, "{{error}}");
+					print_error(ctx);
 			}
 			else
 			{
