@@ -59,3 +59,6 @@ print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
 char my_buffer[64];
 s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 ```
+
+More examples in tests [micro_format_tests.cpp](tests/micro_format_tests.cpp)
+
