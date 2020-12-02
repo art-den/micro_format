@@ -17,6 +17,8 @@
 
 ## How to use
 
+Read it first. How to write "replacement fields" for output strings: https://fmt.dev/latest/syntax.html#format-specification-mini-language 
+
 ### Callback version
 
 1
