@@ -1,4 +1,17 @@
-# Very simple implementation of c++x20 string formating for microcontrollers
+# Very simple implementation of c++20 string formating for microcontrollers
+
+# Supported features
+* Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
+* Flags: `-`, `+`, ` `, `0`, `#`,  `<`, `^`, `>`
+* Argument position
+* Field width
+* Precision for float type
+* Wrong type error detection
+
+# Limitations
+* `#` not supported for float types
+* `L` option (locale-specific formatting) not supported
+* Only `f` presentation for float type is supported. 
 
 ## How to use
 
