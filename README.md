@@ -12,6 +12,7 @@
 * `#` not supported for float types
 * `L` option (locale-specific formatting) not supported
 * Only `f` presentation for float type is supported. 
+* Format strings like `{{}.{}}` not supported
 
 ## How to use
 
