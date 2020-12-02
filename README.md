@@ -36,7 +36,7 @@ static bool uart_format_callback(void* data, char character)
 template <typename ... Args>
 size_t print_to_uart(const char* format, const Args& ... args)
 {
-	return cb_format(uart_format_callback, nullptr, format, args...);
+    return cb_format(uart_format_callback, nullptr, format, args...);
 }
 
 ...
