@@ -21,11 +21,11 @@ struct FormatSpecFlags
 
 struct FormatSpec
 {
-	FormatSpecFlags flags {};
 	int width = -1;
 	int precision = -1;
 	int length = -1;
 	int index = -1;
+	FormatSpecFlags flags{};
 	char format = 0;
 };
 
@@ -57,7 +57,6 @@ static bool is_boolarg_type(FormatArgType arg_type)
 	return
 		(arg_type == FormatArgType::Bool);
 }
-
 
 static void put_char(FormatCtx& ctx, char chr)
 {
@@ -180,10 +179,16 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 		case 's':
 		case '}':
 			if (!state.index_specified)
+			{
 				format_spec.index = int_value;
+				state.index_specified = true;
+			}
 
 			else if (!state.width_specified)
+			{
 				format_spec.width = int_value;
+				state.width_specified = true;
+			}
 
 			else if (state.pt_passed && !state.prec_specified)
 			{
@@ -359,7 +364,7 @@ static void print_trailing_spaces(FormatCtx& ctx, const FormatSpec& format_spec,
 		chars_count = format_spec.width - len;
 
 	else if (format_spec.flags.center_aligned)
-		chars_count = (format_spec.width - len - 1) / 2;
+		chars_count = (format_spec.width - len + 1) / 2;
 
 	while (chars_count--)
 		put_char(ctx, ' ');
@@ -382,7 +387,6 @@ static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& form
 	}
 }
 
-
 static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const char* str, bool is_negative)
 {
 	int len = strlen(str);
@@ -397,7 +401,6 @@ static void print_char_impl(FormatCtx& ctx, const FormatSpec& format_spec, char 
 	char str[] = { value , 0 };
 	print_string_impl(ctx, format_spec, str, false);
 }
-
 
 static void print_uint_impl(FormatCtx& ctx, unsigned value, unsigned base, bool upper_case)
 {
@@ -431,7 +434,8 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 		(format_spec.format == 'p') ? 16 :
 		(format_spec.format == 'o') ? 8 : 10;
 
-	// find length
+	// calculate length
+
 	unsigned char len = find_integer_len(value, base);
 	if (format_spec.flags.octothorp)
 	{
@@ -440,6 +444,9 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 		else if (format_spec.format == 'o')
 			len++;
 	}
+
+	if (is_negative || format_spec.flags.plus || format_spec.flags.space)
+		len++;
 
 	// sign, format specifier and leading spaces or zeros
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, false);
@@ -625,7 +632,7 @@ static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, float val
 
 #endif
 
-static void print_by_format_specifier(FormatCtx& ctx, const FormatSpec& format_spec)
+static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec)
 {
 	auto arg_pointer = ctx.args[format_spec.index].pointer;
 
@@ -706,7 +713,7 @@ void format_impl(FormatCtx& ctx, const char* format)
 				if (ok)
 				{
 					correct_format_specifier(ctx, spec, index);
-					print_by_format_specifier(ctx, spec);
+					print_by_argument_type(ctx, spec);
 					index++;
 				}
 				else

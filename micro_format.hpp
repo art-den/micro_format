@@ -30,6 +30,8 @@ struct FormatArg
 	const void* pointer = nullptr;
 	FormatArgType type = {};
 
+	FormatArg() = default;
+
 	FormatArg(const char           &v) : pointer(&v), type(FormatArgType::Char) {}
 	FormatArg(const unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
 	FormatArg(const short          &v) : pointer(&v), type(FormatArgType::Short) {}
@@ -74,7 +76,8 @@ bool s_format_callback(void* data, char character);
 template <typename ... Args>
 size_t cb_format(FormatCallback callback, void* data, const char* format, const Args& ... args)
 {
-	const impl::FormatArg args_arr[] = { args ... };
+	constexpr unsigned arr_size = (sizeof ... (args)) ? (sizeof ... (args)) : 1;
+	const impl::FormatArg args_arr[arr_size] = { args ... };
 	impl::FormatCtx ctx { callback, data, args_arr, sizeof ... (args) };
 	impl::format_impl(ctx, format);
 	return ctx.chars_printed;
