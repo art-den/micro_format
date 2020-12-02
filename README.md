@@ -1,4 +1,4 @@
-# Very simple implementation of c++20 string formating for microcontrollers
+# Simple implementation of c++20 string formating for microcontrollers
 
 # Supported features
 * Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
