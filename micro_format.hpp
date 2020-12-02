@@ -56,6 +56,14 @@ struct FormatCtx
 
 void format_impl(FormatCtx& ctx, const char* format);
 
+struct SFormatData
+{
+	char* buffer;
+	size_t buffer_size;
+};
+
+bool s_format_callback(void* data, char character);
+
 } // namespace impl
 
 template <typename ... Args>
@@ -65,4 +73,20 @@ size_t cb_format(FormatCallback callback, void* data, const char* format, const 
 	impl::FormatCtx ctx { callback, data, args_arr, sizeof ... (args), 0U };
 	impl::format_impl(ctx, format);
 	return ctx.chars_printed;
+}
+
+template <typename ... Args>
+size_t s_format(char* buffer, size_t buffer_size, const char* format, const Args& ... args)
+{
+	if (buffer_size == 0) return 0;
+	impl::SFormatData data = { buffer, buffer_size - 1 };
+	auto result = cb_format(impl::s_format_callback, &data, format, args...);
+	buffer[result] = 0;
+	return result + 1;
+}
+
+template <typename ... Args, size_t BufSize>
+size_t s_format(char (&buffer)[BufSize], const char* format, const Args& ... args)
+{
+	return s_format(buffer, BufSize, format, args...);
 }

@@ -717,4 +717,16 @@ void format_impl(FormatCtx& ctx, const char* format)
 	}
 }
 
+bool s_format_callback(void* data, char character)
+{
+	auto* sdata = (SFormatData*)data;
+	if (sdata->buffer_size == 0) return false;
+
+	*sdata->buffer++ = character;
+	--sdata->buffer_size;
+
+	return true;
+}
+
+
 } // namespace impl
