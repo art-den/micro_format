@@ -110,7 +110,7 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 
-			if (state.index_specified && (chr == '0') && (int_value == -1))
+			if (state.index_specified && (chr == '0') && (int_value == -1) && !state.pt_passed)
 				format_spec.flags.zero = true;
 			else
 			{
@@ -460,7 +460,7 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 
 static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value)
 {
-	if ((format_spec.format == 's') || (format_spec.format == 0))
+	if ((format_spec.format == 'c') || (format_spec.format == 0))
 		print_char_impl(ctx, format_spec, value);
 
 	else
