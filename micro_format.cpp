@@ -8,15 +8,10 @@ namespace impl {
 
 struct FormatSpecFlags
 {
-	uint8_t left_aligned : 1;
-	uint8_t right_aligned : 1;
-	uint8_t center_aligned : 1;
-	uint8_t plus : 1;
-	uint8_t minus : 1;
-	uint8_t space : 1;
-	uint8_t zero : 1;
 	uint8_t octothorp : 1;
 	uint8_t upper_case : 1;
+	uint8_t zero : 1;
+	uint8_t parsed_ok : 1;
 };
 
 struct FormatSpec
@@ -26,6 +21,8 @@ struct FormatSpec
 	int length = -1;
 	int index = -1;
 	FormatSpecFlags flags{};
+	char align = 0; // '<', '^', '>'
+	char sign = 0;  // '+', '-', ' '
 	char format = 0;
 };
 
@@ -85,88 +82,83 @@ static int strlen(const char *str)
 
 static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, FormatSpec& format_spec)
 {
-	struct State
+	enum class State : uint8_t
 	{
-		uint8_t index_specified : 1;
-		uint8_t width_specified : 1;
-		uint8_t pt_passed : 1;
-		uint8_t prec_specified : 1;
+		Undef,
+		IndexSpecified,
+		PtPassed,
+		PrecSpecified,
+		FormatSpecified,
+		Finished
 	};
 
-	State state {};
+	State state = State::Undef;
 
 	const char* orig_format_str = format_str;
 
-	int int_value = -1;
-
-	bool finished = false;
+	int* int_value = &format_spec.index;
 
 	for (;;)
 	{
 		unsigned char chr = (unsigned char)*format_str++;
 
-		switch (chr)
+		if ((chr >= '0') && (chr <= '9'))
 		{
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-
-			if (state.index_specified && (chr == '0') && (int_value == -1) && !state.pt_passed)
+			if ((state >= State::IndexSpecified) &&
+				(state < State::PtPassed) &&
+				(chr == '0') &&
+				(*int_value == -1))
+			{
 				format_spec.flags.zero = true;
-			else
-			{
-				if (int_value == -1) int_value = 0;
-				int_value *= 10;
-				int_value += chr - '0';
+				continue;
 			}
-			break;
-
-		case ':':
-			if (!state.index_specified)
+			else if (int_value)
 			{
-				format_spec.index = int_value;
-				int_value = -1;
-				state.index_specified = true;
+				if (*int_value == -1) *int_value = 0;
+				*int_value *= 10;
+				*int_value += chr - '0';
+				continue;
 			}
 			else
 				return orig_format_str;
+		}
+		else if (int_value && (*int_value != -1))
+			int_value = nullptr;
 
+		switch (chr)
+		{
+		case ':':
+			if (state == State::Undef)
+			{
+				int_value = &format_spec.width;
+				state = State::IndexSpecified;
+			}
+			else
+				return orig_format_str;
 			break;
 
 		case '.':
-			if (!state.width_specified)
+			if ((state >= State::IndexSpecified) && (state < State::PtPassed))
 			{
-				format_spec.width = int_value;
-				int_value = -1;
-				state.width_specified = true;
-				state.index_specified = true;
-				state.pt_passed = true;
+				int_value = &format_spec.precision;
+				state = State::PtPassed;
 			}
 			else
 				return orig_format_str;
 			break;
 
-		case '<':
-			format_spec.flags.left_aligned = true;
+		case '<': case '>': case '^':
+			if (format_spec.align == 0) 
+				format_spec.align = chr;
+			else
+				return orig_format_str;
 			break;
 
-		case '>':
-			format_spec.flags.right_aligned = true;
-			break;
-
-		case '^':
-			format_spec.flags.center_aligned = true;
-			break;
-
-		case '+':
-			format_spec.flags.plus = true;
-			break;
-
-		case '-':
-			format_spec.flags.minus = true;
-			break;
-
-		case ' ':
-			format_spec.flags.space = true;
+		case '+': case '-': case ' ':
+			if (format_spec.sign == 0) 
+				format_spec.sign = chr;
+			else
+				return orig_format_str;
 			break;
 
 		case '#':
@@ -177,43 +169,22 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 		case 'o': case 'x': case 'X':
 		case 'c': case 'f': case 'F':
 		case 's':
-		case '}':
-			if (!state.index_specified)
-			{
-				format_spec.index = int_value;
-				state.index_specified = true;
-			}
-
-			else if (!state.width_specified)
-			{
-				format_spec.width = int_value;
-				state.width_specified = true;
-			}
-
-			else if (state.pt_passed && !state.prec_specified)
-			{
-				format_spec.precision = int_value;
-				state.prec_specified = true;
-			}
-
-			int_value = -1;
-
-			if (chr == '}')
-				finished = true;
-
-			else if (format_spec.format == 0)
+			if (format_spec.format == 0)
 				format_spec.format = chr;
-
 			else
 				return orig_format_str;
+			state = State::FormatSpecified;
+			break;
 
+		case '}':
+			state = State::Finished;
 			break;
 
 		default:
 			return orig_format_str;
 		}
 
-		if (finished) break;
+		if (state == State::Finished) break;
 	}
 
 	auto user_format = format_spec.format;
@@ -225,20 +196,14 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 	}
 	format_spec.flags.upper_case = (user_format != format_spec.format);
 
+	format_spec.flags.parsed_ok = true;
+
 	return format_str;
 }
 
 static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 {
 	if (format_spec.index >= ctx.args_count) return false;
-
-	auto align_count =
-		format_spec.flags.left_aligned +
-		format_spec.flags.right_aligned +
-		format_spec.flags.center_aligned;
-
-	if (align_count > 1)
-		return false;
 
 	auto type = ctx.args[format_spec.index].type;
 	auto f = format_spec.format;
@@ -268,15 +233,12 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, in
 
 	auto arg_type = ctx.args[format_spec.index].type;
 
-	if (!format_spec.flags.left_aligned
-		&& !format_spec.flags.right_aligned
-		&& !format_spec.flags.center_aligned)
+	if (format_spec.align == 0)
 	{
-		if (is_integer_arg_type(arg_type)
-			|| is_float_arg_type(arg_type))
-			format_spec.flags.right_aligned = true;
+		if (is_integer_arg_type(arg_type) || is_float_arg_type(arg_type))
+			format_spec.align = '>';
 		else
-			format_spec.flags.left_aligned = true;
+			format_spec.align = '<';
 	}
 
 	switch (arg_type)
@@ -322,14 +284,9 @@ static void print_sign(FormatCtx& ctx, const FormatSpec& format_spec, bool is_ne
 {
 	if (is_negative)
 		put_char(ctx, '-');
-	else
-	{
-		if (format_spec.flags.plus)
-			put_char(ctx, '+');
 
-		else if (format_spec.flags.space)
-			put_char(ctx, ' ');
-	}
+	else if ((format_spec.sign == '+') || (format_spec.sign == ' '))
+		put_char(ctx, format_spec.sign);
 }
 
 static void print_leading_spaces(FormatCtx& ctx, const FormatSpec& format_spec, int len, bool ignore_zero_flag)
@@ -339,12 +296,12 @@ static void print_leading_spaces(FormatCtx& ctx, const FormatSpec& format_spec, 
 	char char_to_print = 0;
 	int chars_count = 0;
 
-	if (format_spec.flags.zero || format_spec.flags.right_aligned)
+	if (format_spec.flags.zero || (format_spec.align == '>'))
 	{
 		char_to_print = (!ignore_zero_flag && format_spec.flags.zero) ? '0' : ' ';
 		chars_count = format_spec.width - len;
 	}
-	else if (format_spec.flags.center_aligned)
+	else if (format_spec.align == '^')
 	{
 		char_to_print = ' ';
 		chars_count = (format_spec.width - len) / 2;
@@ -360,10 +317,10 @@ static void print_trailing_spaces(FormatCtx& ctx, const FormatSpec& format_spec,
 
 	int chars_count = 0;
 
-	if (!format_spec.flags.zero && format_spec.flags.left_aligned)
+	if (!format_spec.flags.zero && (format_spec.align == '<'))
 		chars_count = format_spec.width - len;
 
-	else if (format_spec.flags.center_aligned)
+	else if (format_spec.align == '^')
 		chars_count = (format_spec.width - len + 1) / 2;
 
 	while (chars_count--)
@@ -390,7 +347,7 @@ static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& form
 static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const char* str, bool is_negative)
 {
 	int len = strlen(str);
-	if (is_negative || format_spec.flags.plus || format_spec.flags.space) len++;
+	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, true);
 	print_raw_string(ctx, str);
 	print_trailing_spaces(ctx, format_spec, len);
@@ -445,8 +402,7 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 			len++;
 	}
 
-	if (is_negative || format_spec.flags.plus || format_spec.flags.space)
-		len++;
+	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 
 	// sign, format specifier and leading spaces or zeros
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, false);
@@ -540,8 +496,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float 
 	int len = 0;
 
 	// size for sign
-	if (is_negative || format_spec.flags.plus || format_spec.flags.space)
-		len++;
+	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 
 	// size for integral part
 	int integral_len = 0;
@@ -708,7 +663,7 @@ void format_impl(FormatCtx& ctx, const char* format)
 
 				format = get_format_specifier(ctx, format, spec);
 
-				bool ok = check_format_specifier(ctx, spec);
+				bool ok = spec.flags.parsed_ok && check_format_specifier(ctx, spec);
 
 				if (ok)
 				{
