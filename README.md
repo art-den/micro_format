@@ -24,3 +24,25 @@ static bool uart_format_callback(void* data, char character)
 
 cb_format(uart_format_callback, nullptr, "{:.2} {} {:10}", 1.2f, 2, 42U);
 ```
+
+```cpp
+static bool uart_format_callback(void* data, char character)
+{
+    uart_send_char(character);
+    return true;
+}
+
+template <typename ... Args>
+size_t print_to_uart(const char* format, const Args& ... args)
+{
+	return cb_format(uart_format_callback, nullptr, format, args...);
+}
+
+...
+
+print_to_uart("Hello world!!!\n");
+print_to_uart("Hello {}\n", "world!!!");
+print_to_uart("{} {}\n", "Hello", "world!!!");
+print_to_uart("{1} {0}\n", "world!!!", "Hello");
+print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
+```
