@@ -53,6 +53,6 @@ print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
 
 ### Print to string buffer
 ```cpp
-    char my_buffer[64];
-    s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
+char my_buffer[64];
+s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 ```
