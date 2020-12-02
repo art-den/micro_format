@@ -16,6 +16,9 @@
 
 ## How to use
 
+### Callback version
+
+1
 ```cpp
 static bool uart_format_callback(void* data, char character)
 {
@@ -25,7 +28,7 @@ static bool uart_format_callback(void* data, char character)
 
 cb_format(uart_format_callback, nullptr, "{:.2} {} {:10}", 1.2f, 2, 42U);
 ```
-
+2
 ```cpp
 static bool uart_format_callback(void* data, char character)
 {
@@ -46,4 +49,10 @@ print_to_uart("Hello {}\n", "world!!!");
 print_to_uart("{} {}\n", "Hello", "world!!!");
 print_to_uart("{1} {0}\n", "world!!!", "Hello");
 print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
+```
+
+### Print to string buffer
+```cpp
+    char my_buffer[64];
+    s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 ```
