@@ -6,6 +6,7 @@
 * Argument position
 * Field width
 * Precision for float type
+* `-inf`, `+inf` and `nan` support for float type
 * Wrong type error detection
 
 # Limitations
