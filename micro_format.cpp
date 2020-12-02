@@ -32,12 +32,12 @@ struct FormatSpec
 static bool is_integer_arg_type(FormatArgType arg_type)
 {
 	return
-		(arg_type == FormatArgType::Int8) ||
-		(arg_type == FormatArgType::Int16) ||
-		(arg_type == FormatArgType::Int32) ||
-		(arg_type == FormatArgType::UInt8) ||
-		(arg_type == FormatArgType::UInt16) ||
-		(arg_type == FormatArgType::UInt32);
+		(arg_type == FormatArgType::Short) ||
+		(arg_type == FormatArgType::UShort) ||
+		(arg_type == FormatArgType::Int) ||
+		(arg_type == FormatArgType::UInt) ||
+		(arg_type == FormatArgType::Long) ||
+		(arg_type == FormatArgType::ULong);
 }
 
 static bool is_float_arg_type(FormatArgType arg_type)
@@ -139,6 +139,7 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 				format_spec.width = int_value;
 				int_value = -1;
 				state.width_specified = true;
+				state.index_specified = true;
 				state.pt_passed = true;
 			}
 			else
@@ -227,8 +228,8 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 	if (format_spec.index >= ctx.args_count) return false;
 
 	auto align_count =
-		format_spec.flags.left_aligned + 
-		format_spec.flags.right_aligned + 
+		format_spec.flags.left_aligned +
+		format_spec.flags.right_aligned +
 		format_spec.flags.center_aligned;
 
 	if (align_count > 1)
@@ -239,7 +240,7 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 
 	if (is_float_arg_type(type) && (f != 'f') && (f != 0))
 		return false;
-	
+
 	bool is_integer_presentation =
 		(f == 'b') || (f == 'd') || (f == 'o') || (f == 'x');
 
@@ -273,7 +274,7 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, in
 			format_spec.flags.left_aligned = true;
 	}
 
-	switch (arg_type) 
+	switch (arg_type)
 	{
 	case FormatArgType::Pointer:
 		if (format_spec.format == 0)
@@ -293,7 +294,7 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, in
 static void print_presentation(FormatCtx& ctx, const FormatSpec& format_spec)
 {
 	if (!format_spec.flags.octothorp) return;
-	
+
 	switch (format_spec.format)
 	{
 	case 'x': case 'p':
@@ -634,36 +635,40 @@ static void print_by_format_specifier(FormatCtx& ctx, const FormatSpec& format_s
 		print_char(ctx, format_spec, *(const char*)arg_pointer);
 		break;
 
-	case FormatArgType::CharPtr:
-		print_string(ctx, format_spec, (const char*)arg_pointer);
+	case FormatArgType::UChar:
+		print_char(ctx, format_spec, *(const unsigned char*)arg_pointer);
 		break;
 
-	case FormatArgType::Int8:
-		print_int(ctx, format_spec, *(const int8_t*)arg_pointer);
+	case FormatArgType::Short:
+		print_int(ctx, format_spec, *(const short*)arg_pointer);
 		break;
 
-	case FormatArgType::Int16:
-		print_int(ctx, format_spec, *(const int16_t*)arg_pointer);
+	case FormatArgType::UShort:
+		print_uint(ctx, format_spec, *(const unsigned short*)arg_pointer);
 		break;
 
-	case FormatArgType::Int32:
-		print_int(ctx, format_spec, *(const int32_t*)arg_pointer);
+	case FormatArgType::Int:
+		print_int(ctx, format_spec, *(const int*)arg_pointer);
 		break;
 
-	case FormatArgType::UInt8:
-		print_uint(ctx, format_spec, *(const int8_t*)arg_pointer);
+	case FormatArgType::UInt:
+		print_uint(ctx, format_spec, *(const unsigned int*)arg_pointer);
 		break;
 
-	case FormatArgType::UInt16:
-		print_uint(ctx, format_spec, *(const int16_t*)arg_pointer);
+	case FormatArgType::Long:
+		print_int(ctx, format_spec, *(const long*)arg_pointer);
 		break;
 
-	case FormatArgType::UInt32:
-		print_uint(ctx, format_spec, *(const int32_t*)arg_pointer);
+	case FormatArgType::ULong:
+		print_uint(ctx, format_spec, *(const unsigned long*)arg_pointer);
 		break;
 
 	case FormatArgType::Bool:
 		print_bool(ctx, format_spec, *(const bool*)arg_pointer);
+		break;
+
+	case FormatArgType::CharPtr:
+		print_string(ctx, format_spec, (const char*)arg_pointer);
 		break;
 
 	case FormatArgType::Pointer:
@@ -681,6 +686,7 @@ static void print_by_format_specifier(FormatCtx& ctx, const FormatSpec& format_s
 void format_impl(FormatCtx& ctx, const char* format)
 {
 	int index = 0;
+	ctx.chars_printed = 0;
 
 	for (;;)
 	{

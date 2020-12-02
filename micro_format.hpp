@@ -1,6 +1,7 @@
 #pragma once
-     
+
 #include <type_traits>
+#include <stddef.h>
 #include <stdint.h>
 
 using FormatCallback = bool (*)(void* data, char character);
@@ -11,14 +12,15 @@ enum class FormatArgType : uint8_t
 {
 	Undef,
 	Char,
-	CharPtr,
-	Int8,
-	Int16,
-	Int32,
-	UInt8,
-	UInt16,
-	UInt32,
+	UChar,
+	Short,
+	UShort,
+	Int,
+	UInt,
+	Long,
+	ULong,
 	Bool,
+	CharPtr,
 	Pointer,
 	Float,
 };
@@ -28,21 +30,24 @@ struct FormatArg
 	const void* pointer = nullptr;
 	FormatArgType type = {};
 
-	
-	FormatArg(const int8_t   &v) : pointer(&v), type(FormatArgType::Int8)    {}
-	FormatArg(const int16_t  &v) : pointer(&v), type(FormatArgType::Int16)   {}
-	FormatArg(const int32_t  &v) : pointer(&v), type(FormatArgType::Int32)   {}
-	FormatArg(const uint8_t  &v) : pointer(&v), type(FormatArgType::UInt8)   {}
-	FormatArg(const uint16_t &v) : pointer(&v), type(FormatArgType::UInt16)  {}
-	FormatArg(const uint32_t &v) : pointer(&v), type(FormatArgType::UInt32)  {}
-	FormatArg(bool           &v) : pointer(&v), type(FormatArgType::Bool)    {}
-	FormatArg(const char     *v) : pointer(v),  type(FormatArgType::CharPtr) {}
+	FormatArg(const char           &v) : pointer(&v), type(FormatArgType::Char) {}
+	FormatArg(const unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
+	FormatArg(const short          &v) : pointer(&v), type(FormatArgType::Short) {}
+	FormatArg(const unsigned short &v) : pointer(&v), type(FormatArgType::UShort) {}
+
+	FormatArg(const int            &v) : pointer(&v), type(FormatArgType::Int) {}
+	FormatArg(const unsigned int   &v) : pointer(&v), type(FormatArgType::UInt) {}
+	FormatArg(const long           &v) : pointer(&v), type(FormatArgType::Long) {}
+	FormatArg(const unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
+	FormatArg(const bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
+	FormatArg(const char           *v) : pointer(v),  type(FormatArgType::CharPtr) {}
 
 	template <typename T>
-	FormatArg(const T        *v) : pointer(v),  type(FormatArgType::Pointer) {}
+	FormatArg(const T              *v) : pointer(v),  type(FormatArgType::Pointer) {}
 
-	FormatArg(const char     &v) : pointer(&v), type(FormatArgType::Char) {}
-	FormatArg(const float    &v) : pointer(&v), type(FormatArgType::Float)   {}
+#ifdef MICRO_FORMAT_FLOAT
+	FormatArg(const float          &v) : pointer(&v), type(FormatArgType::Float) {}
+#endif
 };
 
 struct FormatCtx
@@ -70,7 +75,7 @@ template <typename ... Args>
 size_t cb_format(FormatCallback callback, void* data, const char* format, const Args& ... args)
 {
 	const impl::FormatArg args_arr[] = { args ... };
-	impl::FormatCtx ctx { callback, data, args_arr, sizeof ... (args), 0U };
+	impl::FormatCtx ctx { callback, data, args_arr, sizeof ... (args) };
 	impl::format_impl(ctx, format);
 	return ctx.chars_printed;
 }
