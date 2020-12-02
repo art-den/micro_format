@@ -177,6 +177,38 @@ static void test_float()
 	test_eq("-1.2  ",    "{:<6.1}", -1.2f);
 	test_eq("1.2   ",    "{:<6.1}", 1.2f);
 	test_eq(" -1.2 ",    "{:^6.1}", -1.2f);
+	test_eq("+1.2",      "{:+.1}", 1.2f);
+	test_eq("-1.2",      "{:+.1}", -1.2f);
+	test_eq(" 1.2",      "{: .1}", 1.2f);
+	test_eq("-1.2",      "{: .1}", -1.2f);
+	test_eq("nan",       "{}", NAN);
+	test_eq("nan",       "{:f}", NAN);
+	test_eq("NAN",       "{:F}", NAN);
+	test_eq("  nan",     "{:5}", NAN);
+	test_eq("nan  ",     "{:<5}", NAN);
+	test_eq("inf",       "{}", INFINITY);
+	test_eq("inf",       "{:f}", INFINITY);
+	test_eq("INF",       "{:F}", INFINITY);
+	test_eq("-inf",      "{}", -INFINITY);
+	test_eq("+inf",      "{:+}", INFINITY);
+	test_eq("-inf",      "{:+}", -INFINITY);
+	test_eq("+INF",      "{:+F}", INFINITY);
+	test_eq("-INF",      "{:+F}", -INFINITY);
+	test_eq(" inf",      "{: }", INFINITY);
+	test_eq("-inf",      "{: }", -INFINITY);
+	test_eq("  inf",     "{:5}", INFINITY);
+	test_eq(" -inf",     "{:5}", -INFINITY);
+	test_eq("inf  ",     "{:<5}", INFINITY);
+	test_eq("-inf ",     "{:<5}", -INFINITY);
+}
+
+static void test_arg_pos()
+{
+	test_eq("1234", "{}{}{}{}", 1, 2, 3, 4);
+	test_eq("1234", "{0}{1}{2}{3}", 1, 2, 3, 4);
+	test_eq("1144", "{0}{0}{3}{3}", 1, 2, 3, 4);
+	test_eq("text", "text", 1, 2, 3, 4);
+	test_eq("4321", "{3}{2}{1}{0}", 1, 2, 3, 4);
 }
 
 int main()
@@ -187,6 +219,7 @@ int main()
 	test_str();
 	test_char();
 	test_float();
+	test_arg_pos();
 
 	return errors_count;
 }
