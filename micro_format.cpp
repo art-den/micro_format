@@ -256,7 +256,12 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, in
 			if (format_spec.width == -1)
 				format_spec.width = 2 * sizeof(void*) + (format_spec.flags.octothorp ? 2 : 0);
 		}
+		break;
 
+	case FormatArgType::Float:
+	case FormatArgType::Double:
+		if (format_spec.precision == -1)
+			format_spec.precision = 6;
 		break;
 	}
 }
@@ -480,9 +485,6 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const v
 
 static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
 {
-	int precision = format_spec.precision;
-	if (precision == -1) precision = 6;
-
 	bool is_negative = value < (FloatType)0.0f;
 	if (is_negative)
 		value = -value;
@@ -490,7 +492,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	// do rounding for last digit
 
 	FloatType round = (FloatType)0.5f;
-	for (int i = 0; i < precision; i++)
+	for (int i = 0; i < format_spec.precision; i++)
 		round /= 10.0f;
 	value += round;
 
@@ -499,9 +501,11 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	int len = 0;
 
 	// size for sign
+
 	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 
 	// size for integral part
+
 	int integral_len = 0;
 	FloatType div = 1;
 	bool is_greater_eq_1 = value >= (FloatType)1.0f;
@@ -525,14 +529,15 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	// size for point
 
-	if (precision != 0)
+	if (format_spec.precision != 0)
 		len++;
 
 	// size for decimal part
 
-	len += precision;
+	len += format_spec.precision;
 
 	// print sign, leading spaces or zeros
+
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, false);
 
 	// print integral part
@@ -554,16 +559,15 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	// print decimal part
 
-	if (precision)
+	if (format_spec.precision)
 		put_char(ctx, '.');
 
-	while (precision)
+	for (int i = 0; i < format_spec.precision; i++)
 	{
 		value *= (FloatType)10.0f;
 		int int_val = (int)value;
 		put_char(ctx, '0' + int_val);
 		value -= int_val;
-		--precision;
 	}
 
 	// after spaces
