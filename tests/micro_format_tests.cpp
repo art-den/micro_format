@@ -161,6 +161,8 @@ static void test_char()
 
 static void test_float()
 {
+	// float
+
 	test_eq("1.200000",  "{}", 1.2f);
 	test_eq("-1.200000", "{}", -1.2f);
 	test_eq("1.200000",  "{:f}",  1.2f);
@@ -200,6 +202,11 @@ static void test_float()
 	test_eq(" -inf",     "{:5}", -INFINITY);
 	test_eq("inf  ",     "{:<5}", INFINITY);
 	test_eq("-inf ",     "{:<5}", -INFINITY);
+
+	// double
+
+	test_eq("1.200000", "{}", 1.2);
+	test_eq("-1.200000", "{}", -1.2);
 }
 
 static void test_arg_pos()

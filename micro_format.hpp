@@ -23,6 +23,7 @@ enum class FormatArgType : uint8_t
 	CharPtr,
 	Pointer,
 	Float,
+	Double,
 };
 
 struct FormatArg
@@ -30,25 +31,27 @@ struct FormatArg
 	const void* pointer = nullptr;
 	FormatArgType type = {};
 
-	FormatArg() = default;
-
 	FormatArg(const char           &v) : pointer(&v), type(FormatArgType::Char) {}
 	FormatArg(const unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
 	FormatArg(const short          &v) : pointer(&v), type(FormatArgType::Short) {}
 	FormatArg(const unsigned short &v) : pointer(&v), type(FormatArgType::UShort) {}
-
 	FormatArg(const int            &v) : pointer(&v), type(FormatArgType::Int) {}
 	FormatArg(const unsigned int   &v) : pointer(&v), type(FormatArgType::UInt) {}
 	FormatArg(const long           &v) : pointer(&v), type(FormatArgType::Long) {}
 	FormatArg(const unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
 	FormatArg(const bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
-	FormatArg(const char           *v) : pointer(v),  type(FormatArgType::CharPtr) {}
+
+	// nullptr as default parameter is used to create one element array args_arr if arguments is empty
+	FormatArg(const char           *v = nullptr) : pointer(v),  type(FormatArgType::CharPtr) {} 
 
 	template <typename T>
 	FormatArg(const T              *v) : pointer(v),  type(FormatArgType::Pointer) {}
 
-#ifdef MICRO_FORMAT_FLOAT
+#if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
 	FormatArg(const float          &v) : pointer(&v), type(FormatArgType::Float) {}
+#endif
+#if defined (MICRO_FORMAT_DOUBLE)
+	FormatArg(const double         &v) : pointer(&v), type(FormatArgType::Double) {}
 #endif
 };
 

@@ -1,10 +1,13 @@
-#ifdef MICRO_FORMAT_FLOAT
-#include <float.h>
-#endif
-
+#include <limits>
 #include "micro_format.hpp"
 
 namespace impl {
+
+#if defined (MICRO_FORMAT_DOUBLE)
+using FloatType = double;
+#elif defined (MICRO_FORMAT_FLOAT)
+using FloatType = float;
+#endif
 
 struct FormatSpecFlags
 {
@@ -475,18 +478,18 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const v
 
 #ifdef MICRO_FORMAT_FLOAT
 
-static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float value)
+static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
 {
 	int precision = format_spec.precision;
 	if (precision == -1) precision = 6;
 
-	bool is_negative = value < 0.0f;
+	bool is_negative = value < (FloatType)0.0f;
 	if (is_negative)
 		value = -value;
 
 	// do rounding for last digit
 
-	float round = 0.5f;
+	FloatType round = (FloatType)0.5f;
 	for (int i = 0; i < precision; i++)
 		round /= 10.0f;
 	value += round;
@@ -500,17 +503,17 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float 
 
 	// size for integral part
 	int integral_len = 0;
-	float div = 1;
-	bool is_greater_eq_1 = value >= 1.0f;
+	FloatType div = 1;
+	bool is_greater_eq_1 = value >= (FloatType)1.0f;
 	if (is_greater_eq_1)
 	{
 		while (value > div)
 		{
-			div *= 10.0f;
+			div *= (FloatType)10.0f;
 			len++;
 			integral_len++;
 		}
-		div /= 10.0f;
+		div /= (FloatType)10.0f;
 	}
 	else
 	{
@@ -538,7 +541,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float 
 			int int_val = (int)(value / div);
 			put_char(ctx, '0' + int_val);
 			value -= int_val * div;
-			div /= 10.0f;
+			div /= (FloatType)10.0f;
 		}
 	}
 	else
@@ -553,7 +556,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float 
 
 	while (precision)
 	{
-		value *= 10.0f;
+		value *= (FloatType)10.0f;
 		int int_val = (int)value;
 		put_char(ctx, '0' + int_val);
 		value -= int_val;
@@ -565,7 +568,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, float 
 	print_trailing_spaces(ctx, format_spec, len);
 }
 
-static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, float value)
+static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
 {
 	if (value != value) // nan
 	{
@@ -573,8 +576,8 @@ static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, float val
 		return;
 	}
 
-	bool is_p_inf = (value > FLT_MAX);
-	bool is_n_inf = (value < -FLT_MAX);
+	bool is_p_inf = (value > std::numeric_limits<FloatType>::max());
+	bool is_n_inf = (value < std::numeric_limits<FloatType>::lowest());
 
 	if (is_p_inf || is_n_inf) // +inf or -inf
 	{
@@ -637,9 +640,14 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 		print_pointer(ctx, format_spec, arg_pointer);
 		break;
 
-#ifdef MICRO_FORMAT_FLOAT
+#if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
 	case FormatArgType::Float:
 		print_float(ctx, format_spec, *(const float*)arg_pointer);
+		break;
+#endif
+#if defined (MICRO_FORMAT_DOUBLE)
+	case FormatArgType::Double:
+		print_float(ctx, format_spec, *(const double*)arg_pointer);
 		break;
 #endif
 	}
