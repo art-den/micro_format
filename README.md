@@ -1,4 +1,4 @@
-# Library for std::format-like text formating for microcontrollers
+# C++ library for std::format-like text formating for microcontrollers
 Warning! Library is developing and not ready to use in production
 
 ## Supported features
