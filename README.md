@@ -36,7 +36,7 @@ cb_format(uart_format_callback, nullptr, "{:.2} {} {:10}", 1.2f, 2, 42U);
 template <typename ... Args>
 size_t print_to_uart(const char* format, const Args& ... args)
 {
-	auto uart_format_callback = [](void* data, char character)
+	auto uart_format_callback = [](auto, char character)
 	{
 	    uart_send_char(character);
 	    return true;
