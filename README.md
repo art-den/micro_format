@@ -1,6 +1,6 @@
 # Simple implementation of c++20 string formating for microcontrollers
 
-# Supported features
+## Supported features
 * Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
 * Flags: `-`, `+`, ` `, `0`, `#`,  `<`, `^`, `>`
 * Argument position
@@ -9,7 +9,7 @@
 * `-inf`, `+inf` and `nan` support for float type
 * Wrong type error detection
 
-# Limitations
+## Limitations
 * `#` not supported for float types
 * `L` option (locale-specific formatting) not supported
 * Only `f` presentation for float type is supported. 
@@ -61,3 +61,5 @@ s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 
 More examples in tests [micro_format_tests.cpp](tests/micro_format_tests.cpp)
 
+## Using of float and double arguments
+`micro_format` doesn't not compile with `float` and `double` types support to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
