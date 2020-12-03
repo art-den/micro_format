@@ -64,6 +64,6 @@ More examples or replacement fields are in test sources: [micro_format_tests.cpp
 `micro_format` doesn't not compile with `float` and `double` types support by default to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
 
 ## Compiled binary size (gcc-arm-9 -Os)
-* Binary size of compiled library without `float` and `double` support takes about 2Kb for my coortex-m0 micrcocontroller
+* Binary size of compiled library without `float` and `double` support takes less than 2Kb for my cortex-m0 micrcocontroller
 * Each new combination of arguments types for `cb_format` takes about 80 bytes
 * Call `cb_format` for existing combination of types of arguments takes about 40 bytes
