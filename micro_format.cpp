@@ -52,7 +52,7 @@ static bool is_char_arg_type(FormatArgType arg_type)
 		(arg_type == FormatArgType::Char);
 }
 
-static bool is_boolarg_type(FormatArgType arg_type)
+static bool is_bool_arg_type(FormatArgType arg_type)
 {
 	return
 		(arg_type == FormatArgType::Bool);
@@ -83,7 +83,7 @@ static int strlen(const char *str)
 	return result;
 }
 
-static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, FormatSpec& format_spec)
+static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, FormatSpec& format_spec, int index)
 {
 	enum class State : uint8_t
 	{
@@ -201,6 +201,9 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 
 	format_spec.flags.parsed_ok = true;
 
+	if (format_spec.index == -1)
+		format_spec.index = index;
+
 	return format_str;
 }
 
@@ -223,17 +226,14 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 	if (is_char_arg_type(type) && !is_integer_presentation && (f != 'c') && (f != 0))
 		return false;
 
-	if (is_boolarg_type(type) && !is_integer_presentation && (f != 0))
+	if (is_bool_arg_type(type) && !is_integer_presentation && (f != 's') && (f != 0))
 		return false;
 
 	return true;
 }
 
-static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, int index)
+static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 {
-	if (format_spec.index == -1)
-		format_spec.index = index;
-
 	auto arg_type = ctx.args[format_spec.index].type;
 
 	if (format_spec.align == 0)
@@ -681,13 +681,13 @@ void format_impl(FormatCtx& ctx, const char* format)
 			{
 				FormatSpec spec {};
 
-				format = get_format_specifier(ctx, format, spec);
+				format = get_format_specifier(ctx, format, spec, index);
 
 				bool ok = spec.flags.parsed_ok && check_format_specifier(ctx, spec);
 
 				if (ok)
 				{
-					correct_format_specifier(ctx, spec, index);
+					correct_format_specifier(ctx, spec);
 					print_by_argument_type(ctx, spec);
 					index++;
 				}

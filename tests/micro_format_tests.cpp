@@ -48,7 +48,7 @@ static void test_integer()
 	// decimal
 
 	test_eq("42",     "{}",  42);
-	test_eq("42",     "{d}", 42);
+	test_eq("42",     "{:d}", 42);
 	test_eq("-42",    "{}", -42);
 	test_eq("+42",    "{:+}", 42);
 	test_eq("-42",    "{:+}", -42);
