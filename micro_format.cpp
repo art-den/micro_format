@@ -43,7 +43,8 @@ static bool is_integer_arg_type(FormatArgType arg_type)
 static bool is_float_arg_type(FormatArgType arg_type)
 {
 	return
-		(arg_type == FormatArgType::Float);
+		(arg_type == FormatArgType::Float) ||
+		(arg_type == FormatArgType::Double);
 }
 
 static bool is_char_arg_type(FormatArgType arg_type)
@@ -57,6 +58,13 @@ static bool is_bool_arg_type(FormatArgType arg_type)
 	return
 		(arg_type == FormatArgType::Bool);
 }
+
+static bool is_str_arg_type(FormatArgType arg_type)
+{
+	return
+		(arg_type == FormatArgType::CharPtr);
+}
+
 
 static void put_char(FormatCtx& ctx, char chr)
 {
@@ -220,13 +228,14 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 	bool is_integer_presentation =
 		(f == 'b') || (f == 'd') || (f == 'o') || (f == 'x');
 
-	if (is_integer_arg_type(type) && !is_integer_presentation && (f != 'c') && (f != 0))
-		return false;
-
-	if (is_char_arg_type(type) && !is_integer_presentation && (f != 'c') && (f != 0))
+	if ((is_integer_arg_type(type) || is_char_arg_type(type)) && 
+	    !is_integer_presentation && (f != 'c') && (f != 0))
 		return false;
 
 	if (is_bool_arg_type(type) && !is_integer_presentation && (f != 's') && (f != 0))
+		return false;
+
+	if (is_str_arg_type(type) && (f != 's') && (f != 0))
 		return false;
 
 	return true;

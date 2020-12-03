@@ -1,13 +1,15 @@
 #include <string>
+#include <string_view>
 #include <stdio.h>
 #include <assert.h>
 
 #include "../micro_format.hpp"
 
+static const std::string error_str = "{{error}}";
 static int errors_count = 0;
 
 template <typename ... Args>
-void test_eq(const char *desired, const char *format, const Args& ... args)
+void test_eq(std::string_view desired, const char *format, const Args& ... args)
 {
 	auto print_to_str_callback = [](void* data, char character)
 	{
@@ -25,7 +27,9 @@ void test_eq(const char *desired, const char *format, const Args& ... args)
 	if (!ok)
 	{
 		errors_count++;
-		printf("ERROR: \"%s\" -> \"%s\"\n", desired, result.c_str());
+
+		std::string desired_str{ desired };
+		printf("ERROR: %s \"%s\" -> \"%s\"\n", format, desired_str.c_str(), result.c_str());
 
 		// for debuging purposes
 		std::string another_result;
@@ -115,26 +119,40 @@ static void test_integer()
 	test_eq("  01234567", "{:#10o}", 01234567);
 	test_eq("   1234567", "{:10o}", 01234567);
 	test_eq("  -1234567", "{:10o}", -01234567);
+
+
+	// to char
+
+	test_eq("AB", "{:c}{:c}", 65, 66);
+
+
+	// errors
+
+	test_eq(error_str, "{:s}", 123);
+	test_eq(error_str, "{:f}", 123);
 }
 
 static void test_bool()
 {
-	test_eq("true",   "{}", true);
-	test_eq("false",  "{}", false);
-	test_eq("true",   "{:s}", true);
-	test_eq("false",  "{:s}", false);
-	test_eq("true  ", "{:6}", true);
-	test_eq("false ", "{:6}", false);
-	test_eq("  true", "{:>6}", true);
-	test_eq(" false", "{:>6}", false);
-	test_eq("1",      "{:d}", true);
-	test_eq("0",      "{:d}", false);
-	test_eq("1",      "{:x}", true);
-	test_eq("0",      "{:x}", false);
-	test_eq("0x1",    "{:#x}", true);
-	test_eq("0x0",    "{:#x}", false);
-	test_eq("0b1",    "{:#b}", true);
-	test_eq("0b0",    "{:#b}", false);
+	test_eq("true",    "{}", true);
+	test_eq("false",   "{}", false);
+	test_eq("true",    "{:s}", true);
+	test_eq("false",   "{:s}", false);
+	test_eq("true  ",  "{:6}", true);
+	test_eq("false ",  "{:6}", false);
+	test_eq("  true",  "{:>6}", true);
+	test_eq(" false",  "{:>6}", false);
+	test_eq("1",       "{:d}", true);
+	test_eq("0",       "{:d}", false);
+	test_eq("1",       "{:x}", true);
+	test_eq("0",       "{:x}", false);
+	test_eq("0x1",     "{:#x}", true);
+	test_eq("0x0",     "{:#x}", false);
+	test_eq("0b1",     "{:#b}", true);
+	test_eq("0b0",     "{:#b}", false);
+
+	test_eq(error_str, "{:c}", true);
+	test_eq(error_str, "{:f}", true);
 }
 
 static void test_str()
@@ -144,6 +162,15 @@ static void test_str()
 	test_eq("str    ", "{:7}", "str");
 	test_eq("    str", "{:>7}", "str");
 	test_eq("  str  ", "{:^7}", "str");
+
+	test_eq(error_str, "{:c}", "str");
+	test_eq(error_str, "{:f}", "str");
+	test_eq(error_str, "{:d}", "str");
+	test_eq(error_str, "{:x}", "str");
+	test_eq(error_str, "{:X}", "str");
+	test_eq(error_str, "{:o}", "str");
+	test_eq(error_str, "{:b}", "str");
+	test_eq(error_str, "{:B}", "str");
 }
 
 static void test_char()
@@ -157,6 +184,9 @@ static void test_char()
 	test_eq("0x41",      "{:#x}", 'A');
 	test_eq("0101",      "{:#o}", 'A');
 	test_eq("0b1000001", "{:#b}", 'A');
+
+	test_eq(error_str,   "{:s}", 'E');
+	test_eq(error_str,   "{:f}", 'E');
 }
 
 static void test_float()
@@ -227,6 +257,25 @@ static void test_float()
 	test_eq("1000000000000000.0", "{:.1}", 1000000000000000.0);
 	test_eq("100000000000000000000.0", "{:.1}", 100000000000000000000.0);
 	test_eq("10000000000000000000000.0", "{:.1}", 10000000000000000000000.0);
+
+	// errors
+
+	test_eq(error_str, "{:s}", 123.0f);
+	test_eq(error_str, "{:s}", 123.0);
+	test_eq(error_str, "{:c}", 123.0f);
+	test_eq(error_str, "{:c}", 123.0);
+	test_eq(error_str, "{:d}", 123.0f);
+	test_eq(error_str, "{:d}", 123.0);
+	test_eq(error_str, "{:x}", 123.0f);
+	test_eq(error_str, "{:x}", 123.0);
+	test_eq(error_str, "{:X}", 123.0f);
+	test_eq(error_str, "{:X}", 123.0);
+	test_eq(error_str, "{:o}", 123.0f);
+	test_eq(error_str, "{:o}", 123.0);
+	test_eq(error_str, "{:b}", 123.0f);
+	test_eq(error_str, "{:b}", 123.0);
+	test_eq(error_str, "{:B}", 123.0f);
+	test_eq(error_str, "{:B}", 123.0);
 }
 
 static void test_arg_pos()
@@ -236,6 +285,8 @@ static void test_arg_pos()
 	test_eq("1144", "{0}{0}{3}{3}", 1, 2, 3, 4);
 	test_eq("text", "text", 1, 2, 3, 4);
 	test_eq("4321", "{3}{2}{1}{0}", 1, 2, 3, 4);
+
+	test_eq("1"+error_str+"1", "{0}{1}{0}", 1);
 }
 
 int main()
