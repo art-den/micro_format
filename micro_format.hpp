@@ -42,7 +42,7 @@ struct FormatArg
 	FormatArg(const bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
 
 	// nullptr as default parameter is used to create one element array args_arr if arguments is empty
-	FormatArg(const char           *v = nullptr) : pointer(v),  type(FormatArgType::CharPtr) {} 
+	FormatArg(const char           *v = nullptr) : pointer(v),  type(FormatArgType::CharPtr) {}
 
 	template <typename T>
 	FormatArg(const T              *v) : pointer(v),  type(FormatArgType::Pointer) {}

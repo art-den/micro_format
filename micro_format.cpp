@@ -151,14 +151,14 @@ static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, 
 			break;
 
 		case '<': case '>': case '^':
-			if (format_spec.align == 0) 
+			if (format_spec.align == 0)
 				format_spec.align = chr;
 			else
 				return orig_format_str;
 			break;
 
 		case '+': case '-': case ' ':
-			if (format_spec.sign == 0) 
+			if (format_spec.sign == 0)
 				format_spec.sign = chr;
 			else
 				return orig_format_str;
@@ -262,6 +262,9 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec, in
 	case FormatArgType::Double:
 		if (format_spec.precision == -1)
 			format_spec.precision = 6;
+		break;
+
+	default:
 		break;
 	}
 }
@@ -657,6 +660,8 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 		print_float(ctx, format_spec, *(const double*)arg_pointer);
 		break;
 #endif
+	default:
+		break;
 	}
 }
 
