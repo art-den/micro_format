@@ -62,4 +62,4 @@ s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 More examples or replacement fields are in test sources: [micro_format_tests.cpp](tests/micro_format_tests.cpp)
 
 ## Using of float and double arguments
-`micro_format` doesn't not compile with `float` and `double` types support to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
+`micro_format` doesn't not compile with `float` and `double` types support bt default to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
