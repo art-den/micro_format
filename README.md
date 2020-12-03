@@ -19,8 +19,13 @@
 
 Read it first. How to write "replacement fields" for output strings: https://fmt.dev/latest/syntax.html#format-specification-mini-language 
 
-### Callback version
+### Print to string buffer
+```cpp
+char my_buffer[64];
+s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
+```
 
+### Callback version
 1
 ```cpp
 static bool uart_format_callback(void* data, char character)
@@ -51,12 +56,6 @@ print_to_uart("Hello {}\n", "world!!!");
 print_to_uart("{} {}\n", "Hello", "world!!!");
 print_to_uart("{1} {0}\n", "world!!!", "Hello");
 print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
-```
-
-### Print to string buffer
-```cpp
-char my_buffer[64];
-s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 ```
 
 More examples or replacement fields are in test sources: [micro_format_tests.cpp](tests/micro_format_tests.cpp)
