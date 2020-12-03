@@ -66,5 +66,5 @@ More examples or replacement fields are in test sources: [micro_format_tests.cpp
 
 ## Compiled binary size (gcc-arm-9 -Os)
 * Binary size of compiled library without `float` and `double` support takes about 2Kb for my coortex-m0 micrcocontroller
-* Each new combination of arguments types takes about 80 bytes
+* Each new combination of arguments types for `cb_format` takes about 80 bytes
 * Call `cb_format` for existing combination of types of arguments takes about 40 bytes
