@@ -476,7 +476,7 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const v
 }
 
 
-#ifdef MICRO_FORMAT_FLOAT
+#if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
 
 static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
 {
