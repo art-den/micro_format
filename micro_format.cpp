@@ -513,7 +513,10 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 			len++;
 			integral_len++;
 		}
-		div /= (FloatType)10.0f;
+		if ((int)(value / div) == 0)
+			div /= (FloatType)10.0f;
+		else
+			integral_len++;
 	}
 	else
 	{

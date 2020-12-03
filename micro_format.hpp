@@ -57,11 +57,11 @@ struct FormatArg
 
 struct FormatCtx
 {
-	FormatCallback callback;
-	void *data;
-	const FormatArg* args;
-	int args_count;
-	size_t chars_printed;
+	const FormatCallback   callback;
+	void* const            data;
+	const FormatArg* const args;
+	const int              args_count;
+	size_t                 chars_printed;
 };
 
 void format_impl(FormatCtx& ctx, const char* format);
