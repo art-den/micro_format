@@ -6,7 +6,7 @@ Warning! Library is developing and not ready to use in production
 * Flags: `-`, `+`, ` `, `0`, `#`,  `<`, `^`, `>`
 * Argument position
 * Field width
-* `float` and `double` type are supported (`-inf`, `+inf` and `nan` is also works)
+* `float` and `double` types are supported (`-inf`, `+inf` and `nan` also works)
 * Wrong type error detection
 
 ## Limitations
