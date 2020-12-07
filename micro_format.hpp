@@ -137,7 +137,7 @@ size_t cb_format_int(FormatCallback callback, void* data, int value);
 size_t s_format_int(char* buffer, size_t buffer_size, int value);
 
 // Print integer as decimal value into constant-sized buffer
-template <typename ... Args, size_t BufSize>
+template <size_t BufSize>
 size_t s_format_int(char(&buffer)[BufSize], int value)
 {
 	return s_format_int(buffer, BufSize, value);
@@ -150,7 +150,7 @@ size_t cb_format_uint(FormatCallback callback, void* data, unsigned value);
 size_t s_format_uint(char* buffer, size_t buffer_size, unsigned value);
 
 // Print unsigned integer as decimal value into constant-sized buffer
-template <typename ... Args, size_t BufSize>
+template <size_t BufSize>
 size_t s_format_uint(char(&buffer)[BufSize], unsigned value)
 {
 	return s_format_uint(buffer, BufSize, value);
@@ -163,7 +163,7 @@ size_t cb_format_hex(FormatCallback callback, void* data, unsigned value);
 size_t s_format_hex(char* buffer, size_t buffer_size, unsigned value);
 
 // Print unsigned integer as hexadecimal value into constant-sized buffer
-template <typename ... Args, size_t BufSize>
+template <size_t BufSize>
 size_t s_format_hex(char(&buffer)[BufSize], unsigned value)
 {
 	return s_format_hex(buffer, BufSize, value);
@@ -176,7 +176,7 @@ size_t cb_format_bin(FormatCallback callback, void* data, unsigned value);
 size_t s_format_bin(char* buffer, size_t buffer_size, unsigned value);
 
 // Print unsigned integer as binary value into constant-sized buffer
-template <typename ... Args, size_t BufSize>
+template <size_t BufSize>
 size_t s_format_bin(char(&buffer)[BufSize], unsigned value)
 {
 	return s_format_bin(buffer, BufSize, value);
@@ -192,7 +192,7 @@ size_t cb_format_float(FormatCallback callback, void* data, impl::FloatType valu
 size_t s_format_float(char* buffer, size_t buffer_size, impl::FloatType value, int precision);
 
 // Print floating point number into constant-sized buffer
-template <typename ... Args, size_t BufSize>
+template <size_t BufSize>
 size_t s_format_float(char(&buffer)[BufSize], impl::FloatType value, int precision)
 {
 	return s_format_float(buffer, BufSize, value, precision);
