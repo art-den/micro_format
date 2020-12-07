@@ -1,12 +1,12 @@
-# Simple implementation of c++20 string formating for microcontrollers
+# C++ library for std::format-like text formating for microcontrollers
+Warning! Library is developing and not ready to use in production
 
 ## Supported features
 * Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
 * Flags: `-`, `+`, ` `, `0`, `#`,  `<`, `^`, `>`
 * Argument position
 * Field width
-* Precision for float type
-* `-inf`, `+inf` and `nan` support for float type
+* `float` and `double` types are supported (`-inf`, `+inf` and `nan` also works)
 * Wrong type error detection
 
 ## Limitations
@@ -61,7 +61,7 @@ print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
 More examples or replacement fields are in test sources: [micro_format_tests.cpp](tests/micro_format_tests.cpp)
 
 ## Using of float and double arguments
-Library doesn't not compile with `float` and `double` types support by default to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
+Library doesn't compile with `float` and `double` types support by default to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
 
 ## Compiled binary size (gcc-arm-9 -Os)
 * Binary size of compiled library without `float` and `double` support takes less than 2Kb for my cortex-m0 micrcocontroller
