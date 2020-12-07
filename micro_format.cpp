@@ -503,10 +503,9 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	// do rounding for last digit
 
-	FloatType round = (FloatType)0.5f;
-	for (int i = 0; i < format_spec.precision; i++)
-		round /= 10.0f;
-	value += round;
+	auto round_div = (FloatType)1.0f;
+	for (int i = 0; i < format_spec.precision; i++) round_div *= (FloatType)10.0f;
+	value += (FloatType)0.5f / round_div;
 
 	// start calculate all text len
 
@@ -519,18 +518,18 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	// size for integral part
 
 	int integral_len = 0;
-	FloatType div = 1;
+	FloatType integral_div = 1;
 	bool is_greater_eq_1 = value >= (FloatType)1.0f;
 	if (is_greater_eq_1)
 	{
-		while (value > div)
+		while (value > integral_div)
 		{
-			div *= (FloatType)10.0f;
+			integral_div *= (FloatType)10.0f;
 			len++;
 			integral_len++;
 		}
-		if ((int)(value / div) == 0)
-			div /= (FloatType)10.0f;
+		if ((int)(value / integral_div) == 0)
+			integral_div /= (FloatType)10.0f;
 		else
 			integral_len++;
 	}
@@ -550,7 +549,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	// print sign, leading spaces or zeros
 
-	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, false);
+	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, true);
 
 	// print integral part
 
@@ -558,10 +557,10 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	{
 		while (integral_len--)
 		{
-			int int_val = (int)(value / div);
+			int int_val = (int)(value / integral_div);
 			put_char(ctx, '0' + int_val);
-			value -= int_val * div;
-			div /= (FloatType)10.0f;
+			value -= int_val * integral_div;
+			integral_div /= (FloatType)10.0f;
 		}
 	}
 	else

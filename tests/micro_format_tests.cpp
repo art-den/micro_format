@@ -39,6 +39,44 @@ void test_eq(std::string_view desired, const char *format, const Args& ... args)
 	assert(ok);
 }
 
+void test_cmp_printf(const char* format, double value)
+{
+	auto print_to_str_callback = [](void* data, char character)
+	{
+		auto str = (std::string*)data;
+		str->push_back(character);
+		return true;
+	};
+
+	std::string result;
+	std::string fmt1 = "{:";
+	fmt1.append(format);
+	fmt1.append("}");
+	cb_format(print_to_str_callback, &result, fmt1.c_str(), value);
+
+	std::string fmt2 = "%";
+	fmt2.append(format);
+	fmt2.append("f");
+	char printf_buffer[256] = {};
+	sprintf_s(printf_buffer, fmt2.c_str(), value);
+
+	bool ok = result == printf_buffer;
+
+	if (!ok)
+	{
+		errors_count++;
+
+		printf("ERROR: %s \"%s\" -> \"%s\" (%.20f)\n", format, printf_buffer, result.c_str(), value);
+
+		// for debuging purposes
+		std::string another_result;
+		cb_format(print_to_str_callback, &result, fmt1.c_str(), value);
+	}
+
+	assert(ok);
+}
+
+
 static void test_common()
 {
 	test_eq("", "");
@@ -258,6 +296,27 @@ static void test_float()
 	test_eq("100000000000000000000.0", "{:.1}", 100000000000000000000.0);
 	test_eq("10000000000000000000000.0", "{:.1}", 10000000000000000000000.0);
 
+	// compalre with printf
+
+	for (int64_t i = -10'000; i < 1'000'000; i += 11)
+	{
+		double value = i / 1003.0;
+		test_cmp_printf(".11", value);
+	}
+
+	for (int64_t i = 1'000'000; i < 1'000'000'000; i += 10001)
+	{
+		double value = i / 1003.0;
+		test_cmp_printf(".6", value);
+	}
+
+	for (int64_t i = -10'000; i < 1'000'000'000; i += 10001)
+	{
+		double value = i / 13.0;
+		test_cmp_printf(".6", value);
+	}
+
+
 	// errors
 
 	test_eq(error_str, "{:s}", 123.0f);
@@ -277,6 +336,7 @@ static void test_float()
 	test_eq(error_str, "{:B}", 123.0f);
 	test_eq(error_str, "{:B}", 123.0);
 }
+
 
 static void test_arg_pos()
 {
