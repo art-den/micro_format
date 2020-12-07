@@ -301,21 +301,20 @@ static void test_float()
 	for (int64_t i = -10'000; i < 1'000'000; i += 11)
 	{
 		double value = i / 1003.0;
-		test_cmp_printf(".11", value);
+		test_cmp_printf(".12", value);
 	}
 
 	for (int64_t i = 1'000'000; i < 1'000'000'000; i += 10001)
 	{
 		double value = i / 1003.0;
-		test_cmp_printf(".6", value);
+		test_cmp_printf(".12", value);
 	}
 
 	for (int64_t i = -10'000; i < 1'000'000'000; i += 10001)
 	{
 		double value = i / 13.0;
-		test_cmp_printf(".6", value);
+		test_cmp_printf(".12", value);
 	}
-
 
 	// errors
 

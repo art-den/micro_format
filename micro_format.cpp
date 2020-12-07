@@ -1,12 +1,15 @@
 #include <limits>
+#include <math.h>
 #include "micro_format.hpp"
 
 namespace impl {
 
 #if defined (MICRO_FORMAT_DOUBLE)
 using FloatType = double;
+#define MODF modf
 #elif defined (MICRO_FORMAT_FLOAT)
 using FloatType = float;
+#define MODF modff
 #endif
 
 struct FormatSpecFlags
@@ -501,11 +504,14 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	if (is_negative)
 		value = -value;
 
+	auto orig_value = value;
+
 	// do rounding for last digit
 
 	auto round_div = (FloatType)1.0f;
 	for (int i = 0; i < format_spec.precision; i++) round_div *= (FloatType)10.0f;
-	value += (FloatType)0.5f / round_div;
+	const auto round_adjustment = (FloatType)0.5f / round_div;
+	value += round_adjustment;
 
 	// start calculate all text len
 
@@ -567,8 +573,13 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	{
 		put_char(ctx, '0');
 	}
-
+	
 	// print decimal part
+
+	FloatType integral_part = 0;
+	value = MODF(orig_value, &integral_part) + round_adjustment;
+	if (value > (FloatType)1.0f)
+		value -= (FloatType)1.0f;
 
 	if (format_spec.precision)
 		put_char(ctx, '.');
