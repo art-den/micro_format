@@ -510,8 +510,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	auto round_div = (FloatType)1.0f;
 	for (int i = 0; i < format_spec.precision; i++) round_div *= (FloatType)10.0f;
-	const auto round_adjustment = (FloatType)0.5f / round_div;
-	value += round_adjustment;
+	value += (FloatType)0.5f / round_div;
 
 	// start calculate all text len
 
@@ -577,9 +576,7 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	// print decimal part
 
 	FloatType integral_part = 0;
-	value = MODF(orig_value, &integral_part) + round_adjustment;
-	if (value > (FloatType)1.0f)
-		value -= (FloatType)1.0f;
+	value = MODF(orig_value, &integral_part);
 
 	if (format_spec.precision)
 		put_char(ctx, '.');
@@ -587,9 +584,11 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 	for (int i = 0; i < format_spec.precision; i++)
 	{
 		value *= (FloatType)10.0f;
-		int int_val = (int)value;
-		put_char(ctx, '0' + int_val);
+		round_div /= (FloatType)10.0f;
+		int int_val = (int)(value + (FloatType)0.5f / round_div);
 		value -= int_val;
+		if (int_val >= 10) int_val -= 10;
+		put_char(ctx, '0' + int_val);
 	}
 
 	// after spaces
