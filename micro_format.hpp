@@ -8,6 +8,12 @@ using FormatCallback = bool (*)(void* data, char character);
 
 namespace impl {
 
+#if defined (MICRO_FORMAT_DOUBLE)
+	using FloatType = double;
+#elif defined (MICRO_FORMAT_FLOAT)
+	using FloatType = float;
+#endif
+
 enum class FormatArgType : uint8_t
 {
 	Undef,
@@ -55,17 +61,23 @@ struct FormatArg
 #endif
 };
 
+struct DstData
+{
+	const FormatCallback callback;
+	void* const          data;
+	size_t               chars_printed;
+};
+
 struct FormatCtx
 {
-	const FormatCallback   callback;
-	void* const            data;
+	DstData dst;
 	const FormatArg* const args;
 	const int              args_count;
-	size_t                 chars_printed;
 };
 
 void format_impl(FormatCtx& ctx, const char* format);
 
+// callback data for printing into string buffer
 struct SFormatData
 {
 	char* buffer;
@@ -74,30 +86,117 @@ struct SFormatData
 
 bool s_format_callback(void* data, char character);
 
+template <typename PrintFun>
+size_t s_format_impl(char* buffer, size_t buffer_size, const PrintFun &print_fun)
+{
+	if (buffer_size == 0) return 0;
+	impl::SFormatData data = { buffer, buffer_size - 1 };
+	auto result = print_fun(data);
+	buffer[result] = 0;
+	return result;
+}
+
 } // namespace impl
 
+///////////////////////////////////////////////////////////////////////////////
+
+
+// Print values formating by {} syntax calling callback for each character
 template <typename ... Args>
 size_t cb_format(FormatCallback callback, void* data, const char* format, const Args& ... args)
 {
 	constexpr unsigned arr_size = (sizeof ... (args)) ? (sizeof ... (args)) : 1;
 	const impl::FormatArg args_arr[arr_size] = { args ... };
-	impl::FormatCtx ctx { callback, data, args_arr, sizeof ... (args) };
+	impl::FormatCtx ctx{ { callback, data }, args_arr, sizeof ... (args) };
 	impl::format_impl(ctx, format);
-	return ctx.chars_printed;
+	return ctx.dst.chars_printed;
 }
 
+// Print values formating by {} syntax into buffer
 template <typename ... Args>
 size_t s_format(char* buffer, size_t buffer_size, const char* format, const Args& ... args)
 {
-	if (buffer_size == 0) return 0;
-	impl::SFormatData data = { buffer, buffer_size - 1 };
-	auto result = cb_format(impl::s_format_callback, &data, format, args...);
-	buffer[result] = 0;
-	return result + 1;
+	return impl::s_format_impl(
+		buffer, 
+		buffer_size, 
+		[&](auto& data) { return cb_format(impl::s_format_callback, &data, format, args...); }
+	);
 }
 
+// Print values formating by {} syntax into constant-sized buffer
 template <typename ... Args, size_t BufSize>
 size_t s_format(char (&buffer)[BufSize], const char* format, const Args& ... args)
 {
 	return s_format(buffer, BufSize, format, args...);
 }
+
+// Print integer as decimal value calling callback for each character
+size_t cb_format_int(FormatCallback callback, void* data, int value);
+
+// Print integer as decimal value into buffer
+size_t s_format_int(char* buffer, size_t buffer_size, int value);
+
+// Print integer as decimal value into constant-sized buffer
+template <typename ... Args, size_t BufSize>
+size_t s_format_int(char(&buffer)[BufSize], int value)
+{
+	return s_format_int(buffer, BufSize, value);
+}
+
+// Print unsigned integer as decimal value calling callback for each character
+size_t cb_format_uint(FormatCallback callback, void* data, unsigned value);
+
+// Print unsigned integer as decimal value into buffer
+size_t s_format_uint(char* buffer, size_t buffer_size, unsigned value);
+
+// Print unsigned integer as decimal value into constant-sized buffer
+template <typename ... Args, size_t BufSize>
+size_t s_format_uint(char(&buffer)[BufSize], unsigned value)
+{
+	return s_format_uint(buffer, BufSize, value);
+}
+
+// Print unsigned integer as hexadecimal value calling callback for each character
+size_t cb_format_hex(FormatCallback callback, void* data, unsigned value);
+
+// Print unsigned integer as hexadecimal value into buffer
+size_t s_format_hex(char* buffer, size_t buffer_size, unsigned value);
+
+// Print unsigned integer as hexadecimal value into constant-sized buffer
+template <typename ... Args, size_t BufSize>
+size_t s_format_hex(char(&buffer)[BufSize], unsigned value)
+{
+	return s_format_hex(buffer, BufSize, value);
+}
+
+// Print unsigned integer as binary value calling callback for each character
+size_t cb_format_bin(FormatCallback callback, void* data, unsigned value);
+
+// Print unsigned integer as binary value value into buffer
+size_t s_format_bin(char* buffer, size_t buffer_size, unsigned value);
+
+// Print unsigned integer as binary value into constant-sized buffer
+template <typename ... Args, size_t BufSize>
+size_t s_format_bin(char(&buffer)[BufSize], unsigned value)
+{
+	return s_format_bin(buffer, BufSize, value);
+}
+
+
+#if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
+
+// Print floating point number calling callback for each character
+size_t cb_format_float(FormatCallback callback, void* data, impl::FloatType value, int precision);
+
+// Print floating point number into buffer
+size_t s_format_float(char* buffer, size_t buffer_size, impl::FloatType value, int precision);
+
+// Print floating point number into constant-sized buffer
+template <typename ... Args, size_t BufSize>
+size_t s_format_float(char(&buffer)[BufSize], impl::FloatType value, int precision)
+{
+	return s_format_float(buffer, BufSize, value, precision);
+}
+
+
+#endif

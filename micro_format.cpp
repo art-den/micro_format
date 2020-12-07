@@ -5,10 +5,8 @@
 namespace impl {
 
 #if defined (MICRO_FORMAT_DOUBLE)
-using FloatType = double;
 #define MODF modf
 #elif defined (MICRO_FORMAT_FLOAT)
-using FloatType = float;
 #define MODF modff
 #endif
 
@@ -69,21 +67,21 @@ static bool is_str_arg_type(FormatArgType arg_type)
 }
 
 
-static void put_char(FormatCtx& ctx, char chr)
+static void put_char(DstData& dst, char chr)
 {
-	ctx.callback(ctx.data, chr);
-	++ctx.chars_printed;
+	dst.callback(dst.data, chr);
+	++dst.chars_printed;
 }
 
-static void print_raw_string(FormatCtx& ctx, const char *text)
+static void print_raw_string(DstData& dst, const char *text)
 {
 	while (*text)
-		put_char(ctx, *text++);
+		put_char(dst, *text++);
 }
 
 static void print_error(FormatCtx& ctx)
 {
-	print_raw_string(ctx, "{{error}}");
+	print_raw_string(ctx.dst, "{{error}}");
 }
 
 static int strlen(const char *str)
@@ -231,7 +229,7 @@ static bool check_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 	bool is_integer_presentation =
 		(f == 'b') || (f == 'd') || (f == 'o') || (f == 'x');
 
-	if ((is_integer_arg_type(type) || is_char_arg_type(type)) && 
+	if ((is_integer_arg_type(type) || is_char_arg_type(type)) &&
 	    !is_integer_presentation && (f != 'c') && (f != 0))
 		return false;
 
@@ -288,17 +286,17 @@ static void print_presentation(FormatCtx& ctx, const FormatSpec& format_spec)
 	switch (format_spec.format)
 	{
 	case 'x': case 'p':
-		put_char(ctx, '0');
-		put_char(ctx, format_spec.flags.upper_case ? 'X' : 'x');
+		put_char(ctx.dst, '0');
+		put_char(ctx.dst, format_spec.flags.upper_case ? 'X' : 'x');
 		break;
 
 	case 'b':
-		put_char(ctx, '0');
-		put_char(ctx, format_spec.flags.upper_case ? 'B' : 'b');
+		put_char(ctx.dst, '0');
+		put_char(ctx.dst, format_spec.flags.upper_case ? 'B' : 'b');
 		break;
 
 	case 'o':
-		put_char(ctx, '0');
+		put_char(ctx.dst, '0');
 		break;
 	}
 }
@@ -306,10 +304,10 @@ static void print_presentation(FormatCtx& ctx, const FormatSpec& format_spec)
 static void print_sign(FormatCtx& ctx, const FormatSpec& format_spec, bool is_negative)
 {
 	if (is_negative)
-		put_char(ctx, '-');
+		put_char(ctx.dst, '-');
 
 	else if ((format_spec.sign == '+') || (format_spec.sign == ' '))
-		put_char(ctx, format_spec.sign);
+		put_char(ctx.dst, format_spec.sign);
 }
 
 static void print_leading_spaces(FormatCtx& ctx, const FormatSpec& format_spec, int len, bool ignore_zero_flag)
@@ -331,7 +329,7 @@ static void print_leading_spaces(FormatCtx& ctx, const FormatSpec& format_spec, 
 	}
 
 	while (chars_count--)
-		put_char(ctx, char_to_print);
+		put_char(ctx.dst, char_to_print);
 }
 
 static void print_trailing_spaces(FormatCtx& ctx, const FormatSpec& format_spec, int len)
@@ -347,7 +345,7 @@ static void print_trailing_spaces(FormatCtx& ctx, const FormatSpec& format_spec,
 		chars_count = (format_spec.width - len + 1) / 2;
 
 	while (chars_count--)
-		put_char(ctx, ' ');
+		put_char(ctx.dst, ' ');
 }
 
 static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& format_spec, bool is_negative, int len, bool ignore_zero_flag)
@@ -372,7 +370,7 @@ static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, con
 	int len = strlen(str);
 	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, true);
-	print_raw_string(ctx, str);
+	print_raw_string(ctx.dst, str);
 	print_trailing_spaces(ctx, format_spec, len);
 }
 
@@ -382,10 +380,10 @@ static void print_char_impl(FormatCtx& ctx, const FormatSpec& format_spec, char 
 	print_string_impl(ctx, format_spec, str, false);
 }
 
-static void print_uint_impl(FormatCtx& ctx, unsigned value, unsigned base, bool upper_case)
+static void print_uint_impl(DstData& dst, unsigned value, unsigned base, bool upper_case)
 {
 	if (value >= base)
-		print_uint_impl(ctx, value / base, base, upper_case);
+		print_uint_impl(dst, value / base, base, upper_case);
 
 	unsigned value_to_print = value % base;
 
@@ -394,7 +392,7 @@ static void print_uint_impl(FormatCtx& ctx, unsigned value, unsigned base, bool 
 		? (value_to_print + '0')
 		: (value_to_print - 10 + (upper_case ? 'A' : 'a'));
 
-	put_char(ctx, char_to_print);
+	put_char(dst, char_to_print);
 }
 
 static int find_integer_len(unsigned value, unsigned base)
@@ -431,7 +429,7 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, false);
 
 	// integer
-	print_uint_impl(ctx, value, base, format_spec.flags.upper_case);
+	print_uint_impl(ctx.dst, value, base, format_spec.flags.upper_case);
 
 	// after spaces or zeros
 	print_trailing_spaces(ctx, format_spec, len);
@@ -498,50 +496,128 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const v
 
 #if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
 
-static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
+struct PrintFloatData
 {
-	bool is_negative = value < (FloatType)0.0f;
-	if (is_negative)
+	FloatType rounded_value = {};
+	FloatType positive_value = {};
+	FloatType round_div = {};
+	FloatType integral_div = {};
+	int integral_len = {};
+	bool is_negative {};
+	const char* nan_text = nullptr;
+};
+
+static void gather_data_to_print_float(FloatType value, int precision, bool upper_case, PrintFloatData &result)
+{
+	if (value != value) // nan
+	{
+		result.nan_text = upper_case ? "NAN" : "nan";
+		return;
+	}
+
+	bool is_p_inf = (value > std::numeric_limits<FloatType>::max());
+	bool is_n_inf = (value < std::numeric_limits<FloatType>::lowest());
+
+	if (is_p_inf || is_n_inf) // +inf or -inf
+	{
+		result.nan_text = upper_case ? "INF" : "inf";
+		result.is_negative = is_n_inf;
+		return;
+	}
+
+	result.is_negative = value < (FloatType)0.0f;
+	if (result.is_negative)
 		value = -value;
 
-	auto orig_value = value;
+	// calculate data for rounding last decimal digit
 
-	// do rounding for last digit
+	result.round_div = (FloatType)1.0f;
+	for (int i = 0; i < precision; i++) result.round_div *= (FloatType)10.0f;
 
-	auto round_div = (FloatType)1.0f;
-	for (int i = 0; i < format_spec.precision; i++) round_div *= (FloatType)10.0f;
-	value += (FloatType)0.5f / round_div;
+	// do rounding
 
-	// start calculate all text len
+	result.rounded_value = value + (FloatType)0.5f / result.round_div;
 
-	int len = 0;
+	// calculate integral part len
 
-	// size for sign
-
-	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
-
-	// size for integral part
-
-	int integral_len = 0;
-	FloatType integral_div = 1;
-	bool is_greater_eq_1 = value >= (FloatType)1.0f;
-	if (is_greater_eq_1)
+	result.integral_len = 0;
+	result.integral_div = 1;
+	if (value >= (FloatType)1.0f)
 	{
-		while (value > integral_div)
+		while (value > result.integral_div)
 		{
-			integral_div *= (FloatType)10.0f;
-			len++;
-			integral_len++;
+			result.integral_div *= (FloatType)10.0f;
+			result.integral_len++;
 		}
-		if ((int)(value / integral_div) == 0)
-			integral_div /= (FloatType)10.0f;
+		if ((int)(value / result.integral_div) == 0)
+			result.integral_div /= (FloatType)10.0f;
 		else
-			integral_len++;
+			result.integral_len++;
 	}
 	else
 	{
-		len++;
+		result.integral_len = 1;
 	}
+
+	result.positive_value = value;
+}
+
+static void printf_float_number(const PrintFloatData data, DstData &dst, int precision)
+{
+	// print integral part
+
+	auto value = data.rounded_value;
+	auto integral_len = data.integral_len;
+	auto integral_div = data.integral_div;
+	while (integral_len--)
+	{
+		int int_val = (int)(value / integral_div);
+		put_char(dst, '0' + int_val);
+		value -= int_val * integral_div;
+		integral_div /= (FloatType)10.0f;
+	}
+
+	// print decimal part
+
+	FloatType integral_part = 0;
+	value = MODF(data.positive_value, &integral_part);
+
+	if (precision)
+		put_char(dst, '.');
+
+	auto round_div = data.round_div;
+	for (int i = 0; i < precision; i++)
+	{
+		value *= (FloatType)10.0f;
+		round_div /= (FloatType)10.0f;
+		int int_val = (int)(value + (FloatType)0.5f / round_div);
+		value -= int_val;
+		if (int_val >= 10) int_val -= 10;
+		put_char(dst, '0' + int_val);
+	}
+}
+
+static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
+{
+	PrintFloatData data{};
+
+	gather_data_to_print_float(value, format_spec.precision, format_spec.flags.upper_case, data);
+
+	// if value is non-a-number print nan, +inf or -inf
+
+	if (data.nan_text)
+	{
+		print_string_impl(ctx, format_spec, data.nan_text, data.is_negative);
+		return;
+	}
+
+	// start calculate all text len
+
+	int len = data.integral_len;
+
+	// size for sign
+
+	if (data.is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
 
 	// size for point
 
@@ -554,66 +630,15 @@ static void print_f_number(FormatCtx& ctx, const FormatSpec& format_spec, FloatT
 
 	// print sign, leading spaces or zeros
 
-	print_sign_and_leading_spaces(ctx, format_spec, is_negative, len, true);
+	print_sign_and_leading_spaces(ctx, format_spec, data.is_negative, len, true);
 
-	// print integral part
+	// integral and decimal parts
 
-	if (is_greater_eq_1)
-	{
-		while (integral_len--)
-		{
-			int int_val = (int)(value / integral_div);
-			put_char(ctx, '0' + int_val);
-			value -= int_val * integral_div;
-			integral_div /= (FloatType)10.0f;
-		}
-	}
-	else
-	{
-		put_char(ctx, '0');
-	}
-	
-	// print decimal part
-
-	FloatType integral_part = 0;
-	value = MODF(orig_value, &integral_part);
-
-	if (format_spec.precision)
-		put_char(ctx, '.');
-
-	for (int i = 0; i < format_spec.precision; i++)
-	{
-		value *= (FloatType)10.0f;
-		round_div /= (FloatType)10.0f;
-		int int_val = (int)(value + (FloatType)0.5f / round_div);
-		value -= int_val;
-		if (int_val >= 10) int_val -= 10;
-		put_char(ctx, '0' + int_val);
-	}
+	printf_float_number(data, ctx.dst, format_spec.precision);
 
 	// after spaces
 
 	print_trailing_spaces(ctx, format_spec, len);
-}
-
-static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, FloatType value)
-{
-	if (value != value) // nan
-	{
-		print_string_impl(ctx, format_spec, format_spec.flags.upper_case ? "NAN" : "nan", false);
-		return;
-	}
-
-	bool is_p_inf = (value > std::numeric_limits<FloatType>::max());
-	bool is_n_inf = (value < std::numeric_limits<FloatType>::lowest());
-
-	if (is_p_inf || is_n_inf) // +inf or -inf
-	{
-		print_string_impl(ctx, format_spec, format_spec.flags.upper_case ? "INF" : "inf", is_n_inf);
-		return;
-	}
-
-	print_f_number(ctx, format_spec, value);
 }
 
 #endif
@@ -686,7 +711,7 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 void format_impl(FormatCtx& ctx, const char* format)
 {
 	int index = 0;
-	ctx.chars_printed = 0;
+	ctx.dst.chars_printed = 0;
 
 	for (;;)
 	{
@@ -714,12 +739,12 @@ void format_impl(FormatCtx& ctx, const char* format)
 			}
 			else
 			{
-				put_char(ctx, '{');
+				put_char(ctx.dst, '{');
 				format++;
 			}
 		}
 		else
-			put_char(ctx, chr);
+			put_char(ctx.dst, chr);
 	}
 }
 
@@ -734,5 +759,108 @@ bool s_format_callback(void* data, char character)
 	return true;
 }
 
-
 } // namespace impl
+
+static size_t cb_format_uint_impl(FormatCallback callback, void* data, unsigned value, unsigned base)
+{
+	impl::DstData dst{ callback, data };
+	dst.chars_printed = 0;
+	impl::print_uint_impl(dst, value, base, false);
+	return dst.chars_printed;
+}
+
+size_t cb_format_int(FormatCallback callback, void* data, int value)
+{
+	impl::DstData dst { callback, data };
+	dst.chars_printed = 0;
+	if (value < 0)
+	{
+		value = -value;
+		put_char(dst, '-');
+	}
+	impl::print_uint_impl(dst, value, 10, false);
+	return dst.chars_printed;
+}
+
+size_t s_format_int(char* buffer, size_t buffer_size, int value)
+{
+	return impl::s_format_impl(
+		buffer,
+		buffer_size,
+		[=](auto& data) { return cb_format_int(impl::s_format_callback, &data, value); }
+	);
+}
+
+size_t cb_format_uint(FormatCallback callback, void* data, unsigned value)
+{
+	return cb_format_uint_impl(callback, data, value, 10);
+}
+
+size_t s_format_uint(char* buffer, size_t buffer_size, unsigned value)
+{
+	return impl::s_format_impl(
+		buffer,
+		buffer_size,
+		[=](auto& data) { return cb_format_uint(impl::s_format_callback, &data, value); }
+	);
+}
+
+size_t cb_format_hex(FormatCallback callback, void* data, unsigned value)
+{
+	return cb_format_uint_impl(callback, data, value, 16);
+}
+
+size_t s_format_hex(char* buffer, size_t buffer_size, unsigned value)
+{
+	return impl::s_format_impl(
+		buffer,
+		buffer_size,
+		[=](auto& data) { return cb_format_hex(impl::s_format_callback, &data, value); }
+	);
+}
+
+size_t cb_format_bin(FormatCallback callback, void* data, unsigned value)
+{
+	return cb_format_uint_impl(callback, data, value, 2);
+}
+
+size_t s_format_bin(char* buffer, size_t buffer_size, unsigned value)
+{
+	return impl::s_format_impl(
+		buffer,
+		buffer_size,
+		[=](auto& data) { return cb_format_bin(impl::s_format_callback, &data, value); }
+	);
+}
+
+#if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
+
+size_t cb_format_float(FormatCallback callback, void* cb_data, impl::FloatType value, int precision)
+{
+	impl::DstData dst{ callback, cb_data };
+	impl::PrintFloatData data{};
+
+	impl::gather_data_to_print_float(value, precision, false, data);
+
+	if (data.nan_text)
+	{
+		if (data.is_negative) put_char(dst, '-');
+		impl::print_raw_string(dst, data.nan_text);
+	}
+	else
+	{
+		impl::printf_float_number(data, dst, precision);
+	}
+	return dst.chars_printed;
+}
+
+size_t s_format_float(char* buffer, size_t buffer_size, impl::FloatType value, int precision)
+{
+	return impl::s_format_impl(
+		buffer,
+		buffer_size,
+		[=](auto& data) { return cb_format_float(impl::s_format_callback, &data, value, precision); }
+	);
+}
+
+#endif
