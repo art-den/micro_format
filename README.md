@@ -1,6 +1,6 @@
 # C++ library for std::format-like text formating for microcontrollers
 ```diff
-! Warning! Library is developing and not ready to use in production !
+! Warning! Library is in developing and not ready to be used in production code !
 ```
 
 ## Supported features
