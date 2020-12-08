@@ -309,6 +309,9 @@ static void test_individual_functions()
 {
 	char buffer[256] = {};
 
+	mf::format_int(buffer, 777);
+	assert(strcmp(buffer, "777") == 0);
+
 	mf::format_int(buffer, -12345);
 	assert(strcmp(buffer, "-12345") == 0);
 
@@ -334,6 +337,45 @@ static void test_individual_functions()
 	assert(strcmp(buffer, "nan") == 0);
 }
 
+static void test_print_to_buffer()
+{
+	char buffer1[3] = {0, 1, 2};
+	auto printed = mf::format_int(buffer1, 2, -12345);
+	assert(printed == 1);
+	assert(buffer1[0] == '-');
+	assert(buffer1[1] == 0);
+	assert(buffer1[2] == 2);
+
+	char buffer2[3] = { 0, 1, 2 };
+	printed = mf::format_uint(buffer2, 2, 12345);
+	assert(printed == 1);
+	assert(buffer2[0] == '1');
+	assert(buffer2[1] == 0);
+	assert(buffer2[2] == 2);
+
+	char buffer3[7] = { 0, 1, 2, 3, 4, 5, 6 };
+	printed = mf::format_float(buffer3, 6, -1.123456789, 10);
+	assert(printed == 5);
+	assert(buffer3[0] == '-');
+	assert(buffer3[1] == '1');
+	assert(buffer3[2] == '.');
+	assert(buffer3[3] == '1');
+	assert(buffer3[4] == '2');
+	assert(buffer3[5] == 0);
+	assert(buffer3[6] == 6);
+
+	char buffer4[7] = { 0, 1, 2, 3, 4, 5, 6 };
+	printed = mf::format(buffer4, 6, "{}{}{}{}{}{}{}{}{}{}", 10, 20, 30, 40, 50, 60, 70);
+	assert(printed == 5);
+	assert(buffer4[0] == '1');
+	assert(buffer4[1] == '0');
+	assert(buffer4[2] == '2');
+	assert(buffer4[3] == '0');
+	assert(buffer4[4] == '3');
+	assert(buffer4[5] == 0);
+	assert(buffer4[6] == 6);
+}
+
 int main()
 {
 	test_common();
@@ -344,4 +386,5 @@ int main()
 	test_float();
 	test_arg_pos();
 	test_individual_functions();
+	test_print_to_buffer();
 }

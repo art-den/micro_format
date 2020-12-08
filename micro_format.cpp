@@ -70,8 +70,9 @@ static bool is_str_arg_type(FormatArgType arg_type)
 
 static void put_char(DstData& dst, char chr)
 {
-	dst.callback(dst.data, chr);
-	++dst.chars_printed;
+	bool char_is_printed = dst.callback(dst.data, chr);
+	if (char_is_printed)
+		++dst.chars_printed;
 }
 
 static void print_raw_string(DstData& dst, const char *text)
