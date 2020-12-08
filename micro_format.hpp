@@ -133,29 +133,29 @@ size_t format(char (&buffer)[BufSize], const char* format_str, const Args& ... a
 }
 
 // Print integer as decimal value calling callback for each character
-size_t format_int(FormatCallback callback, void* data, int value);
+size_t format_dec(FormatCallback callback, void* data, int value);
 
 // Print integer as decimal value into buffer
-size_t format_int(char* buffer, size_t buffer_size, int value);
+size_t format_dec(char* buffer, size_t buffer_size, int value);
 
 // Print integer as decimal value into constant-sized buffer
 template <size_t BufSize>
-size_t format_int(char(&buffer)[BufSize], int value)
+size_t format_dec(char(&buffer)[BufSize], int value)
 {
-	return format_int(buffer, BufSize, value);
+	return format_dec(buffer, BufSize, value);
 }
 
 // Print unsigned integer as decimal value calling callback for each character
-size_t format_uint(FormatCallback callback, void* data, unsigned value);
+size_t format_dec(FormatCallback callback, void* data, unsigned value);
 
 // Print unsigned integer as decimal value into buffer
-size_t format_uint(char* buffer, size_t buffer_size, unsigned value);
+size_t format_dec(char* buffer, size_t buffer_size, unsigned value);
 
 // Print unsigned integer as decimal value into constant-sized buffer
 template <size_t BufSize>
-size_t format_uint(char(&buffer)[BufSize], unsigned value)
+size_t format_dec(char(&buffer)[BufSize], unsigned value)
 {
-	return format_uint(buffer, BufSize, value);
+	return format_dec(buffer, BufSize, value);
 }
 
 // Print unsigned integer as hexadecimal value calling callback for each character

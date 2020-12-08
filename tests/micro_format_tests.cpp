@@ -33,7 +33,6 @@ void test_cmp_printf(const char* format_str, double value)
 	assert(strcmp(result, printf_buffer) == 0);
 }
 
-
 static void test_common()
 {
 	test_eq("", "");
@@ -293,7 +292,6 @@ static void test_float()
 	test_eq(error_str, "{:B}", 123.0);
 }
 
-
 static void test_arg_pos()
 {
 	test_eq("1234", "{}{}{}{}", 1, 2, 3, 4);
@@ -309,13 +307,13 @@ static void test_individual_functions()
 {
 	char buffer[256] = {};
 
-	mf::format_int(buffer, 777);
+	mf::format_dec(buffer, 777);
 	assert(strcmp(buffer, "777") == 0);
 
-	mf::format_int(buffer, -12345);
+	mf::format_dec(buffer, -12345);
 	assert(strcmp(buffer, "-12345") == 0);
 
-	mf::format_uint(buffer, 12345);
+	mf::format_dec(buffer, 12345);
 	assert(strcmp(buffer, "12345") == 0);
 
 	mf::format_hex(buffer, 0xabcd4321);
@@ -340,14 +338,14 @@ static void test_individual_functions()
 static void test_print_to_buffer()
 {
 	char buffer1[3] = {0, 1, 2};
-	auto printed = mf::format_int(buffer1, 2, -12345);
+	auto printed = mf::format_dec(buffer1, 2, -12345);
 	assert(printed == 1);
 	assert(buffer1[0] == '-');
 	assert(buffer1[1] == 0);
 	assert(buffer1[2] == 2);
 
 	char buffer2[3] = { 0, 1, 2 };
-	printed = mf::format_uint(buffer2, 2, 12345);
+	printed = mf::format_dec(buffer2, 2, 12345U);
 	assert(printed == 1);
 	assert(buffer2[0] == '1');
 	assert(buffer2[1] == 0);

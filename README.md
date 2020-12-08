@@ -60,6 +60,24 @@ print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
 
 More examples or replacement fields are in test sources: [micro_format_tests.cpp](tests/micro_format_tests.cpp)
 
+### Misc functions
+Library contains function for non-format style convertion values to string:
+* `format_dec` - to print integer as decimal number
+* `format_hex` - to print integer as hexadecimal number
+* `format_bin` - to print integer as binary number
+* `format_float` - to print floating point number
+
+Both print to buffer and callback versions are presented
+
+```cpp
+mf::format_dec(my_buffer, 42);
+
+mf::format_dec(uart_format_callback, nullptr, 42);
+
+mf::format_float(my_buffer, 1234.5678, 4);
+
+```
+
 ## Using of float and double arguments
 Library doesn't compile with `float` and `double` types support by default to reduce binary size of firmware. To use `float` type you have do define `MICRO_FORMAT_FLOAT` macro in you project. To use both `float` and `double` define `MICRO_FORMAT_DOUBLE`
 

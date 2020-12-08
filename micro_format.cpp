@@ -771,7 +771,7 @@ static size_t format_uint_impl(FormatCallback callback, void* data, unsigned val
 	return dst.chars_printed;
 }
 
-size_t format_int(FormatCallback callback, void* data, int value)
+size_t format_dec(FormatCallback callback, void* data, int value)
 {
 	impl::DstData dst { callback, data };
 	dst.chars_printed = 0;
@@ -784,26 +784,26 @@ size_t format_int(FormatCallback callback, void* data, int value)
 	return dst.chars_printed;
 }
 
-size_t format_int(char* buffer, size_t buffer_size, int value)
+size_t format_dec(char* buffer, size_t buffer_size, int value)
 {
 	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return format_int(impl::format_buf_callback, &data, value); }
+		[=](auto& data) { return format_dec(impl::format_buf_callback, &data, value); }
 	);
 }
 
-size_t format_uint(FormatCallback callback, void* data, unsigned value)
+size_t format_dec(FormatCallback callback, void* data, unsigned value)
 {
 	return format_uint_impl(callback, data, value, 10);
 }
 
-size_t format_uint(char* buffer, size_t buffer_size, unsigned value)
+size_t format_dec(char* buffer, size_t buffer_size, unsigned value)
 {
 	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return format_uint(impl::format_buf_callback, &data, value); }
+		[=](auto& data) { return format_dec(impl::format_buf_callback, &data, value); }
 	);
 }
 
