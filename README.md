@@ -69,7 +69,7 @@ Library contains simple functions for non-format style convertion values to stri
 * `format_bin` - to print integer as binary number
 * `format_float` - to print floating point number
 
-Both print to buffer and callback versions are presented
+Both "print to buffer" and callback versions are presented
 
 ```cpp
 mf::format_dec(my_buffer, 42);
