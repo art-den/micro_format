@@ -22,7 +22,7 @@ Read it first. How to write "replacement fields" for output strings: https://fmt
 ### Print to string buffer
 ```cpp
 char my_buffer[64];
-s_format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
+mf::format(my_buffer, "{} {} {}", "Printing", "to", "buffer");
 ```
 
 ### Callback version
@@ -34,19 +34,19 @@ static bool uart_format_callback(void* data, char character)
     return true;
 }
 
-cb_format(uart_format_callback, nullptr, "{:.2} {} {:10}", 1.2f, 2, 42U);
+mf::format(uart_format_callback, nullptr, "{:.2} {} {:10}", 1.2f, 2, 42U);
 ```
 2
 ```cpp
 template <typename ... Args>
 size_t print_to_uart(const char* format, const Args& ... args)
 {
-	auto uart_format_callback = [](auto, char character)
-	{
-	    uart_send_char(character);
-	    return true;
-	};
-	return cb_format(uart_format_callback, nullptr, format, args...);
+    auto uart_format_callback = [](auto, char character)
+    {
+        uart_send_char(character);
+        return true;
+    };
+    return mf::format(uart_format_callback, nullptr, format, args...);
 }
 
 ...

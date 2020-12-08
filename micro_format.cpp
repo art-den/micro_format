@@ -2,6 +2,7 @@
 #include <math.h>
 #include "micro_format.hpp"
 
+namespace mf {
 namespace impl {
 
 #if defined (MICRO_FORMAT_DOUBLE)
@@ -708,23 +709,23 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 	}
 }
 
-void format_impl(FormatCtx& ctx, const char* format)
+void format_impl(FormatCtx& ctx, const char* format_str)
 {
 	int index = 0;
 	ctx.dst.chars_printed = 0;
 
 	for (;;)
 	{
-		char chr = *format++;
+		char chr = *format_str++;
 		if (chr == 0) break;
 
 		if (chr == '{')
 		{
-			if (*format != '{')
+			if (*format_str != '{')
 			{
 				FormatSpec spec {};
 
-				format = get_format_specifier(ctx, format, spec, index);
+				format_str = get_format_specifier(ctx, format_str, spec, index);
 
 				bool ok = spec.flags.parsed_ok && check_format_specifier(ctx, spec);
 
@@ -740,7 +741,7 @@ void format_impl(FormatCtx& ctx, const char* format)
 			else
 			{
 				put_char(ctx.dst, '{');
-				format++;
+				format_str++;
 			}
 		}
 		else
@@ -748,9 +749,9 @@ void format_impl(FormatCtx& ctx, const char* format)
 	}
 }
 
-bool s_format_callback(void* data, char character)
+bool format_buf_callback(void* data, char character)
 {
-	auto* sdata = (SFormatData*)data;
+	auto* sdata = (FormatBufData*)data;
 	if (sdata->buffer_size == 0) return false;
 
 	*sdata->buffer++ = character;
@@ -761,7 +762,7 @@ bool s_format_callback(void* data, char character)
 
 } // namespace impl
 
-static size_t cb_format_uint_impl(FormatCallback callback, void* data, unsigned value, unsigned base)
+static size_t format_uint_impl(FormatCallback callback, void* data, unsigned value, unsigned base)
 {
 	impl::DstData dst{ callback, data };
 	dst.chars_printed = 0;
@@ -769,7 +770,7 @@ static size_t cb_format_uint_impl(FormatCallback callback, void* data, unsigned 
 	return dst.chars_printed;
 }
 
-size_t cb_format_int(FormatCallback callback, void* data, int value)
+size_t format_int(FormatCallback callback, void* data, int value)
 {
 	impl::DstData dst { callback, data };
 	dst.chars_printed = 0;
@@ -782,60 +783,60 @@ size_t cb_format_int(FormatCallback callback, void* data, int value)
 	return dst.chars_printed;
 }
 
-size_t s_format_int(char* buffer, size_t buffer_size, int value)
+size_t format_int(char* buffer, size_t buffer_size, int value)
 {
-	return impl::s_format_impl(
+	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return cb_format_int(impl::s_format_callback, &data, value); }
+		[=](auto& data) { return format_int(impl::format_buf_callback, &data, value); }
 	);
 }
 
-size_t cb_format_uint(FormatCallback callback, void* data, unsigned value)
+size_t format_uint(FormatCallback callback, void* data, unsigned value)
 {
-	return cb_format_uint_impl(callback, data, value, 10);
+	return format_uint_impl(callback, data, value, 10);
 }
 
-size_t s_format_uint(char* buffer, size_t buffer_size, unsigned value)
+size_t format_uint(char* buffer, size_t buffer_size, unsigned value)
 {
-	return impl::s_format_impl(
+	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return cb_format_uint(impl::s_format_callback, &data, value); }
+		[=](auto& data) { return format_uint(impl::format_buf_callback, &data, value); }
 	);
 }
 
-size_t cb_format_hex(FormatCallback callback, void* data, unsigned value)
+size_t format_hex(FormatCallback callback, void* data, unsigned value)
 {
-	return cb_format_uint_impl(callback, data, value, 16);
+	return format_uint_impl(callback, data, value, 16);
 }
 
-size_t s_format_hex(char* buffer, size_t buffer_size, unsigned value)
+size_t format_hex(char* buffer, size_t buffer_size, unsigned value)
 {
-	return impl::s_format_impl(
+	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return cb_format_hex(impl::s_format_callback, &data, value); }
+		[=](auto& data) { return format_hex(impl::format_buf_callback, &data, value); }
 	);
 }
 
-size_t cb_format_bin(FormatCallback callback, void* data, unsigned value)
+size_t format_bin(FormatCallback callback, void* data, unsigned value)
 {
-	return cb_format_uint_impl(callback, data, value, 2);
+	return format_uint_impl(callback, data, value, 2);
 }
 
-size_t s_format_bin(char* buffer, size_t buffer_size, unsigned value)
+size_t format_bin(char* buffer, size_t buffer_size, unsigned value)
 {
-	return impl::s_format_impl(
+	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return cb_format_bin(impl::s_format_callback, &data, value); }
+		[=](auto& data) { return format_bin(impl::format_buf_callback, &data, value); }
 	);
 }
 
 #if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
 
-size_t cb_format_float(FormatCallback callback, void* cb_data, impl::FloatType value, int precision)
+size_t format_float(FormatCallback callback, void* cb_data, impl::FloatType value, int precision)
 {
 	impl::DstData dst{ callback, cb_data };
 	impl::PrintFloatData data{};
@@ -848,19 +849,20 @@ size_t cb_format_float(FormatCallback callback, void* cb_data, impl::FloatType v
 		impl::print_raw_string(dst, data.nan_text);
 	}
 	else
-	{
 		impl::printf_float_number(data, dst, precision);
-	}
+
 	return dst.chars_printed;
 }
 
-size_t s_format_float(char* buffer, size_t buffer_size, impl::FloatType value, int precision)
+size_t format_float(char* buffer, size_t buffer_size, impl::FloatType value, int precision)
 {
-	return impl::s_format_impl(
+	return impl::format_buf_impl(
 		buffer,
 		buffer_size,
-		[=](auto& data) { return cb_format_float(impl::s_format_callback, &data, value, precision); }
+		[=](auto& data) { return format_float(impl::format_buf_callback, &data, value, precision); }
 	);
 }
 
 #endif
+
+} // namespace mf

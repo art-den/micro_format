@@ -1,79 +1,34 @@
 #include <string>
-#include <string_view>
 #include <stdio.h>
 #include <assert.h>
 
 #include "../micro_format.hpp"
 
 static const std::string error_str = "{{error}}";
-static int errors_count = 0;
 
 template <typename ... Args>
-void test_eq(std::string_view desired, const char *format, const Args& ... args)
+void test_eq(const std::string &desired, const char *format_str, const Args& ... args)
 {
-	auto print_to_str_callback = [](void* data, char character)
-	{
-		auto str = (std::string*)data;
-		str->push_back(character);
-		return true;
-	};
-
-	std::string result;
-
-	cb_format(print_to_str_callback, &result, format, args...);
-
-	bool ok = result == desired;
-
-	if (!ok)
-	{
-		errors_count++;
-
-		std::string desired_str{ desired };
-		printf("ERROR: %s \"%s\" -> \"%s\"\n", format, desired_str.c_str(), result.c_str());
-
-		// for debuging purposes
-		std::string another_result;
-		cb_format(print_to_str_callback, &another_result, format, args...);
-	}
-
-	assert(ok);
+	char result[256] = {};
+	mf::format(result, format_str, args...);
+	assert(desired == result);
 }
 
-void test_cmp_printf(const char* format, double value)
+void test_cmp_printf(const char* format_str, double value)
 {
-	auto print_to_str_callback = [](void* data, char character)
-	{
-		auto str = (std::string*)data;
-		str->push_back(character);
-		return true;
-	};
-
-	std::string result;
+	char result[256];
 	std::string fmt1 = "{:";
-	fmt1.append(format);
+	fmt1.append(format_str);
 	fmt1.append("}");
-	cb_format(print_to_str_callback, &result, fmt1.c_str(), value);
+	mf::format(result, fmt1.c_str(), value);
 
 	std::string fmt2 = "%";
-	fmt2.append(format);
+	fmt2.append(format_str);
 	fmt2.append("f");
 	char printf_buffer[256] = {};
 	sprintf_s(printf_buffer, fmt2.c_str(), value);
 
-	bool ok = result == printf_buffer;
-
-	if (!ok)
-	{
-		errors_count++;
-
-		printf("ERROR: %s \"%s\" -> \"%s\" (%.20f)\n", format, printf_buffer, result.c_str(), value);
-
-		// for debuging purposes
-		std::string another_result;
-		cb_format(print_to_str_callback, &result, fmt1.c_str(), value);
-	}
-
-	assert(ok);
+	assert(strcmp(result, printf_buffer) == 0);
 }
 
 
@@ -357,6 +312,4 @@ int main()
 	test_char();
 	test_float();
 	test_arg_pos();
-
-	return errors_count;
 }
