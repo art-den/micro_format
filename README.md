@@ -1,5 +1,7 @@
 # C++ library for std::format-like text formating for microcontrollers
-Warning! Library is developing and not ready to use in production
+```diff
+! Warning! Library is developing and not ready to use in production !
+```
 
 ## Supported features
 * Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
@@ -61,7 +63,7 @@ print_to_uart("U={:8.2}v, I={:8.2}A\n", 11.2f, 0.1f);
 More examples or replacement fields are in test sources: [micro_format_tests.cpp](tests/micro_format_tests.cpp)
 
 ### Misc functions
-Library contains function for non-format style convertion values to string:
+Library contains simple functions for non-format style convertion values to string:
 * `format_dec` - to print integer as decimal number
 * `format_hex` - to print integer as hexadecimal number
 * `format_bin` - to print integer as binary number
