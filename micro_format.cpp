@@ -843,11 +843,10 @@ size_t format_float(FormatCallback callback, void* cb_data, impl::FloatType valu
 
 	impl::gather_data_to_print_float(value, precision, false, data);
 
+	if (data.is_negative) put_char(dst, '-');
+
 	if (data.nan_text)
-	{
-		if (data.is_negative) put_char(dst, '-');
 		impl::print_raw_string(dst, data.nan_text);
-	}
 	else
 		impl::printf_float_number(data, dst, precision);
 

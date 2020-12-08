@@ -166,7 +166,7 @@ size_t format_hex(char* buffer, size_t buffer_size, unsigned value);
 
 // Print unsigned integer as hexadecimal value into constant-sized buffer
 template <size_t BufSize>
-size_t s_format_hex(char(&buffer)[BufSize], unsigned value)
+size_t format_hex(char(&buffer)[BufSize], unsigned value)
 {
 	return format_hex(buffer, BufSize, value);
 }
@@ -184,7 +184,6 @@ size_t format_bin(char(&buffer)[BufSize], unsigned value)
 	return format_bin(buffer, BufSize, value);
 }
 
-
 #if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
 
 // Print floating point number calling callback for each character
@@ -200,6 +199,7 @@ size_t format_float(char(&buffer)[BufSize], impl::FloatType value, int precision
 	return format_float(buffer, BufSize, value, precision);
 }
 
+#endif
+
 } // namespace mf
 
-#endif

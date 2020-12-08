@@ -1,4 +1,6 @@
 #include <string>
+
+#include <string.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -16,7 +18,7 @@ void test_eq(const std::string &desired, const char *format_str, const Args& ...
 
 void test_cmp_printf(const char* format_str, double value)
 {
-	char result[256];
+	char result[256] = {};
 	std::string fmt1 = "{:";
 	fmt1.append(format_str);
 	fmt1.append("}");
@@ -303,6 +305,35 @@ static void test_arg_pos()
 	test_eq("1"+error_str+"1", "{0}{1}{0}", 1);
 }
 
+static void test_individual_functions()
+{
+	char buffer[256] = {};
+
+	mf::format_int(buffer, -12345);
+	assert(strcmp(buffer, "-12345") == 0);
+
+	mf::format_uint(buffer, 12345);
+	assert(strcmp(buffer, "12345") == 0);
+
+	mf::format_hex(buffer, 0xabcd4321);
+	assert(strcmp(buffer, "abcd4321") == 0);
+
+	mf::format_bin(buffer, 0b111100111000110);
+	assert(strcmp(buffer, "111100111000110") == 0);
+
+	mf::format_float(buffer, -1234.56789, 3);
+	assert(strcmp(buffer, "-1234.568") == 0);
+
+	mf::format_float(buffer, INFINITY, 3);
+	assert(strcmp(buffer, "inf") == 0);
+
+	mf::format_float(buffer, -INFINITY, 3);
+	assert(strcmp(buffer, "-inf") == 0);
+
+	mf::format_float(buffer, NAN, 3);
+	assert(strcmp(buffer, "nan") == 0);
+}
+
 int main()
 {
 	test_common();
@@ -312,4 +343,5 @@ int main()
 	test_char();
 	test_float();
 	test_arg_pos();
+	test_individual_functions();
 }
