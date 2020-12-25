@@ -124,6 +124,13 @@ static void test_integer()
 
 	test_eq(error_str, "{:s}", 123);
 	test_eq(error_str, "{:f}", 123);
+
+	// x64
+
+	test_eq("1000000000000", "{}", 1000'000'000'000ULL);
+	test_eq("-1000000000000", "{}", -1000'000'000'000);
+
+	test_eq("FFFFFFFFFFFFFFFF", "{:X}", 0xFFFFFFFFFFFFFFFFULL);
 }
 
 static void test_bool()

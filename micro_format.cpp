@@ -1,5 +1,6 @@
 #include <limits>
 #include <math.h>
+#include <stdint.h>
 #include "micro_format.hpp"
 
 namespace mf {
@@ -9,6 +10,14 @@ namespace impl {
 #define MODF modf
 #elif defined (MICRO_FORMAT_FLOAT)
 #define MODF modff
+#endif
+
+#if defined (MICRO_FORMAT_INT64)
+	using UIntType = unsigned long long;
+	using IntType = long long;
+#else
+	using UIntType = unsigned long;
+	using IntType = long;
 #endif
 
 struct FormatSpecFlags
@@ -382,7 +391,7 @@ static void print_char_impl(FormatCtx& ctx, const FormatSpec& format_spec, char 
 	print_string_impl(ctx, format_spec, str, false);
 }
 
-static void print_uint_impl(DstData& dst, unsigned value, unsigned base, bool upper_case)
+static void print_uint_impl(DstData& dst, UIntType value, unsigned base, bool upper_case)
 {
 	if (value >= base)
 		print_uint_impl(dst, value / base, base, upper_case);
@@ -397,7 +406,7 @@ static void print_uint_impl(DstData& dst, unsigned value, unsigned base, bool up
 	put_char(dst, char_to_print);
 }
 
-static int find_integer_len(unsigned value, unsigned base)
+static int find_uint_len(UIntType value, unsigned base)
 {
 	unsigned int len = 0;
 	while (value != 0) { value /= base; len++; }
@@ -405,7 +414,7 @@ static int find_integer_len(unsigned value, unsigned base)
 	return len;
 }
 
-static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, unsigned value, bool is_negative)
+static void print_uint_generic(FormatCtx& ctx, const FormatSpec& format_spec, UIntType value, bool is_negative)
 {
 	unsigned base =
 		(format_spec.format == 'b') ? 2 :
@@ -416,7 +425,7 @@ static void print_int_generic(FormatCtx& ctx, const FormatSpec& format_spec, uns
 
 	// calculate length
 
-	unsigned char len = find_integer_len(value, base);
+	unsigned char len = find_uint_len(value, base);
 	if (format_spec.flags.octothorp)
 	{
 		if ((format_spec.format == 'x') || (format_spec.format == 'b'))
@@ -443,7 +452,7 @@ static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value
 		print_char_impl(ctx, format_spec, value);
 
 	else
-		print_int_generic(ctx, format_spec, (int)value, false);
+		print_uint_generic(ctx, format_spec, (unsigned)value, false);
 }
 
 static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const char* str)
@@ -451,14 +460,14 @@ static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const ch
 	print_string_impl(ctx, format_spec, str, false);
 }
 
-static void print_int(FormatCtx& ctx, const FormatSpec& format_spec, int value)
+static void print_int(FormatCtx& ctx, const FormatSpec& format_spec, IntType value)
 {
 	bool is_negative = value < 0;
 
 	if (format_spec.format != 'c')
 	{
 		if (is_negative) value = -value;
-		print_int_generic(ctx, format_spec, value, is_negative);
+		print_uint_generic(ctx, format_spec, value, is_negative);
 	}
 	else
 	{
@@ -469,10 +478,10 @@ static void print_int(FormatCtx& ctx, const FormatSpec& format_spec, int value)
 	}
 }
 
-static void print_uint(FormatCtx& ctx, const FormatSpec& format_spec, unsigned value)
+static void print_uint(FormatCtx& ctx, const FormatSpec& format_spec, UIntType value)
 {
 	if (format_spec.format != 'c')
-		print_int_generic(ctx, format_spec, value, false);
+		print_uint_generic(ctx, format_spec, value, false);
 	else
 	{
 		if (value > 255)
@@ -487,12 +496,12 @@ static void print_bool(FormatCtx& ctx, const FormatSpec& format_spec, bool value
 	if ((format_spec.format == 's') || (format_spec.format == 0))
 		print_string_impl(ctx, format_spec, value ? "true" : "false", false);
 	else
-		print_int_generic(ctx, format_spec, (unsigned char)value, false);
+		print_uint_generic(ctx, format_spec, (unsigned char)value, false);
 }
 
 static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const void *pointer)
 {
-	print_int_generic(ctx, format_spec, (unsigned)pointer, false);
+	print_uint_generic(ctx, format_spec, (uintptr_t)pointer, false);
 }
 
 
@@ -705,8 +714,15 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 		print_float(ctx, format_spec, *(const double*)arg_pointer);
 		break;
 #endif
-	default:
+#if defined (MICRO_FORMAT_INT64)
+	case FormatArgType::LLong:
+		print_int(ctx, format_spec, *(const long long*)arg_pointer);
 		break;
+
+	case FormatArgType::ULLong:
+		print_uint(ctx, format_spec, *(const unsigned long long*)arg_pointer);
+		break;
+#endif
 	}
 }
 

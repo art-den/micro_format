@@ -30,8 +30,16 @@ enum class FormatArgType : uint8_t
 	Bool,
 	CharPtr,
 	Pointer,
+#if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
 	Float,
+#endif
+#if defined (MICRO_FORMAT_DOUBLE)
 	Double,
+#endif
+#if defined (MICRO_FORMAT_INT64)
+	LLong,
+	ULLong,
+#endif
 };
 
 struct FormatArg
@@ -60,6 +68,10 @@ struct FormatArg
 #endif
 #if defined (MICRO_FORMAT_DOUBLE)
 	FormatArg(const double         &v) : pointer(&v), type(FormatArgType::Double) {}
+#endif
+#if defined(MICRO_FORMAT_INT64)
+	FormatArg(const long long& v) : pointer(&v), type(FormatArgType::LLong) {}
+	FormatArg(const unsigned long long& v) : pointer(&v), type(FormatArgType::ULLong) {}
 #endif
 };
 
