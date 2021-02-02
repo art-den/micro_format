@@ -85,5 +85,5 @@ Library doesn't compile with `float` and `double` types support by default to re
 
 ## Compiled binary size (gcc-arm-9 -Os)
 * Binary size of compiled library without `float` and `double` support takes less than 2Kb for my cortex-m0 micrcocontroller
-* Each new combination of arguments types for `cb_format` takes about 80 bytes
-* Call `cb_format` for existing combination of types of arguments takes about 40 bytes
+* Each new combination of arguments types for `mf::format` takes about 80 bytes
+* Call `mf::format` for existing combination of types of arguments takes about 40 bytes
