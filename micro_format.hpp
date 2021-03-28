@@ -30,16 +30,10 @@ enum class FormatArgType : uint8_t
 	Bool,
 	CharPtr,
 	Pointer,
-#if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
 	Float,
-#endif
-#if defined (MICRO_FORMAT_DOUBLE)
 	Double,
-#endif
-#if defined (MICRO_FORMAT_INT64)
 	LLong,
 	ULLong,
-#endif
 };
 
 struct FormatArg
@@ -131,8 +125,8 @@ template <typename ... Args>
 size_t format(char* buffer, size_t buffer_size, const char* format_str, const Args& ... args)
 {
 	return impl::format_buf_impl(
-		buffer, 
-		buffer_size, 
+		buffer,
+		buffer_size,
 		[&](auto& data) { return format(impl::format_buf_callback, &data, format_str, args...); }
 	);
 }

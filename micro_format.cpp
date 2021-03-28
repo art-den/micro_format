@@ -723,6 +723,8 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 		print_uint(ctx, format_spec, *(const unsigned long long*)arg_pointer);
 		break;
 #endif
+	default:
+		break;
 	}
 }
 
