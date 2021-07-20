@@ -115,7 +115,7 @@ size_t format(FormatCallback callback, void* data, const char* format_str, const
 {
 	constexpr unsigned arr_size = (sizeof ... (args)) ? (sizeof ... (args)) : 1;
 	const impl::FormatArg args_arr[arr_size] = { args ... };
-	impl::FormatCtx ctx{ { callback, data }, args_arr, sizeof ... (args) };
+	impl::FormatCtx ctx{ { callback, data, 0 }, args_arr, sizeof ... (args) };
 	impl::format_impl(ctx, format_str);
 	return ctx.dst.chars_printed;
 }

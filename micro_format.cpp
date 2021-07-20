@@ -103,7 +103,7 @@ static int strlen(const char *str)
 	return result;
 }
 
-static const char* get_format_specifier(FormatCtx& ctx, const char* format_str, FormatSpec& format_spec, int index)
+static const char* get_format_specifier(const char* format_str, FormatSpec& format_spec, int index)
 {
 	enum class State : uint8_t
 	{
@@ -744,7 +744,7 @@ void format_impl(FormatCtx& ctx, const char* format_str)
 			{
 				FormatSpec spec {};
 
-				format_str = get_format_specifier(ctx, format_str, spec, index);
+				format_str = get_format_specifier(format_str, spec, index);
 
 				bool ok = spec.flags.parsed_ok && check_format_specifier(ctx, spec);
 
@@ -783,16 +783,14 @@ bool format_buf_callback(void* data, char character)
 
 static size_t format_uint_impl(FormatCallback callback, void* data, unsigned value, unsigned base)
 {
-	impl::DstData dst{ callback, data };
-	dst.chars_printed = 0;
+	impl::DstData dst{ callback, data, 0 };
 	impl::print_uint_impl(dst, value, base, false);
 	return dst.chars_printed;
 }
 
 size_t format_dec(FormatCallback callback, void* data, int value)
 {
-	impl::DstData dst { callback, data };
-	dst.chars_printed = 0;
+	impl::DstData dst { callback, data, 0 };
 	if (value < 0)
 	{
 		value = -value;
@@ -857,7 +855,7 @@ size_t format_bin(char* buffer, size_t buffer_size, unsigned value)
 
 size_t format_float(FormatCallback callback, void* cb_data, impl::FloatType value, int precision)
 {
-	impl::DstData dst{ callback, cb_data };
+	impl::DstData dst{ callback, cb_data, 0 };
 	impl::PrintFloatData data{};
 
 	impl::gather_data_to_print_float(value, precision, false, data);
