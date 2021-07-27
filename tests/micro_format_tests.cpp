@@ -1,8 +1,10 @@
-#include <string>
+﻿#include <string>
 
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+
+#include <boost/locale.hpp>
 
 #include "../micro_format.hpp"
 
@@ -11,9 +13,28 @@ static const std::string error_str = "{{error}}";
 template <typename ... Args>
 void test_eq(const std::string &desired, const char *format_str, const Args& ... args)
 {
+	// multibyte...
+
 	char result[256] = {};
 	mf::format(result, format_str, args...);
 	assert(desired == result);
+
+	// unicode...
+
+	std::wstring wstr;
+
+	auto add_wide_char_cb = [](void* data, mf::WideChar chr)
+	{
+		auto* str = (std::wstring*)data;
+		str->push_back(chr);
+		return true;
+	};
+
+	auto wide_chars_count = mf::format_u8(add_wide_char_cb, &wstr, format_str, args...);
+	auto desired_w = boost::locale::conv::utf_to_utf<wchar_t>(desired);
+
+	assert(desired_w == wstr);
+	assert(wide_chars_count == desired_w.size());
 }
 
 void test_cmp_printf(const char* format_str, double value)
@@ -381,6 +402,14 @@ static void test_print_to_buffer()
 	assert(buffer4[6] == 6);
 }
 
+static void test_utf8()
+{
+	test_eq(u8"Русский текст",                u8"Русский текст");
+	test_eq(u8"日本語テキスト",                 u8"日本語テキスト");
+	test_eq(u8"Русский текст 日本語テキスト",   u8"Русский текст {}", u8"日本語テキスト");
+	test_eq(u8"-Русский текст-日本語テキスト-", "-{}-{}-", u8"Русский текст", u8"日本語テキスト");
+}
+
 int main()
 {
 	test_common();
@@ -392,4 +421,5 @@ int main()
 	test_arg_pos();
 	test_individual_functions();
 	test_print_to_buffer();
+	test_utf8();
 }

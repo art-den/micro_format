@@ -1,3 +1,28 @@
+/* C++ library for std::format-like text formating for microcontrollers
+   https://github.com/art-den/micro_format
+
+   MIT License
+
+   Copyright (c) 2020-2021 Artyomov Denis (denis.artyomov@gmail.com)
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. */
+
 #include <limits>
 #include <math.h>
 #include <stdint.h>
@@ -777,6 +802,68 @@ bool format_buf_callback(void* data, char character)
 	--sdata->buffer_size;
 
 	return true;
+}
+
+bool utf8_char_callback(void* data, char chr)
+{
+	Utf8Receiver* r = (Utf8Receiver*)data;
+
+	bool ok = true;
+
+	if (r->count == 0)
+	{
+		if ((chr & 0b10000000) == 0)
+		{
+			ok = r->cb(r->cb_data, chr);
+			r->chars_printed++;
+		}
+
+		else if ((chr & 0b11100000) == 0b11000000)
+		{
+			r->character = chr & 0b00011111;
+			r->count = 1;
+		}
+
+		else if ((chr & 0b11110000) == 0b11100000)
+		{
+			r->character = chr & 0b00001111;
+			r->count = 2;
+		}
+
+		else if ((chr & 0b11111000) == 0b11110000)
+		{
+			r->character = chr & 0b00000111;
+			r->count = 3;
+		}
+
+		else
+		{
+			ok = r->cb(r->cb_data, r->wrong_char);
+			r->chars_printed++;
+		}
+	}
+	else
+	{
+		if ((chr & 0b11000000) != 0b10000000)
+		{
+			ok = r->cb(r->cb_data, r->wrong_char);
+			r->count = 0;
+			r->chars_printed++;
+		}
+
+		r->character <<= 6;
+		r->character |= (chr & 0b00111111);
+
+		r->count--;
+
+		if (r->count == 0)
+		{
+			ok = r->cb(r->cb_data, r->character);
+			r->chars_printed++;
+		}
+	}
+
+	return ok;
 }
 
 } // namespace impl

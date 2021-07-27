@@ -1,3 +1,29 @@
+/* C++ library for std::format-like text formating for microcontrollers
+   https://github.com/art-den/micro_format
+
+   MIT License
+
+   Copyright (c) 2020-2021 Artyomov Denis (denis.artyomov@gmail.com)
+   
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+   
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+   
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. */
+
+
 #pragma once
 
 #include <type_traits>
@@ -6,7 +32,10 @@
 
 namespace mf {
 
+using WideChar = uint32_t;
+
 using FormatCallback = bool (*)(void* data, char character);
+using FormatWideCallback = bool (*)(void* data, WideChar character);
 
 namespace impl {
 
@@ -104,6 +133,19 @@ size_t format_buf_impl(char* buffer, size_t buffer_size, const PrintFun &print_f
 	return result;
 }
 
+struct Utf8Receiver
+{
+	FormatWideCallback cb = nullptr;
+	void* cb_data = nullptr;
+
+	WideChar character = 0;
+	uint8_t count = 0;
+	WideChar wrong_char = '?';
+	size_t chars_printed = 0;
+};
+
+bool utf8_char_callback(void* data, char chr);
+
 } // namespace impl
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,6 +160,17 @@ size_t format(FormatCallback callback, void* data, const char* format_str, const
 	impl::FormatCtx ctx{ { callback, data, 0 }, args_arr, sizeof ... (args) };
 	impl::format_impl(ctx, format_str);
 	return ctx.dst.chars_printed;
+}
+
+// Print values formating by {} syntax calling callback for each wide character
+// format_str and string arguments must be in utf8 enconding
+// Return value is number of wide chars printed in function
+template <typename ... Args>
+size_t format_u8(FormatWideCallback callback, void* data, const char* format_str_utf8, const Args& ... args)
+{
+	impl::Utf8Receiver utf8 = { callback, data, 0, 0, '?', 0 };
+	format(impl::utf8_char_callback, &utf8, format_str_utf8, args...);
+	return utf8.chars_printed;
 }
 
 // Print values formating by {} syntax into buffer
