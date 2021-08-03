@@ -62,6 +62,34 @@ static void test_common()
 	test_eq("Simple text arg Another text", "Simple text {} Another text", "arg");
 }
 
+static void test_types()
+{
+	test_eq("12345", "{}", (int32_t)12345);
+	test_eq("12345", "{}", (uint32_t)12345);
+	test_eq("12345", "{}", (int64_t)12345);
+	test_eq("12345", "{}", (uint64_t)12345);
+	test_eq("12345", "{}", (int16_t)12345);
+	test_eq("12345", "{}", (uint16_t)12345);
+
+	volatile int64_t vi64 = 12345;
+	test_eq("12345", "{}", vi64);
+
+	volatile uint64_t vui64 = 12345;
+	test_eq("12345", "{}", vui64);
+
+	volatile int32_t vi32 = 12345;
+	test_eq("12345", "{}", vi32);
+
+	volatile uint32_t vui32 = 12345;
+	test_eq("12345", "{}", vui32);
+
+	volatile int16_t vi16 = 12345;
+	test_eq("12345", "{}", vi16);
+
+	volatile uint16_t uvi16 = 12345;
+	test_eq("12345", "{}", uvi16);
+}
+
 static void test_integer()
 {
 	// decimal
@@ -413,6 +441,7 @@ static void test_utf8()
 int main()
 {
 	test_common();
+	test_types();
 	test_integer();
 	test_bool();
 	test_str();
