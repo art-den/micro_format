@@ -4,17 +4,17 @@
    MIT License
 
    Copyright (c) 2020-2021 Artyomov Denis (denis.artyomov@gmail.com)
-   
+
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
    in the Software without restriction, including without limitation the rights
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
-   
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-   
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -166,6 +166,37 @@ bool utf8_char_callback(void* data, char chr);
 
 } // namespace impl
 
+class BufferPrinter
+{
+public:
+	template <size_t BufSize>
+	BufferPrinter(char (&buffer)[BufSize]) :
+		buf_ptr_(buffer),
+		free_space_(BufSize)
+	{}
+
+	char* get_buf()
+	{
+		return buf_ptr_;
+	}
+
+	size_t get_free_buf_space()
+	{
+		return free_space_;
+	}
+
+	void reduce(size_t len)
+	{
+		if (len > free_space_) len = free_space_;
+		buf_ptr_ += len;
+		free_space_ -= len;
+	}
+
+private:
+	char* buf_ptr_ = nullptr;
+	size_t free_space_ = 0;
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -207,6 +238,21 @@ template <typename ... Args, size_t BufSize>
 size_t format(char (&buffer)[BufSize], const char* format_str, const Args& ... args)
 {
 	return format(buffer, BufSize, format_str, args...);
+}
+
+// Append text into buffer
+template <typename ... Args>
+size_t format(BufferPrinter &buf_printer, const char* format_str, const Args& ... args)
+{
+	size_t size = impl::format_buf_impl(
+		buf_printer.get_buf(),
+		buf_printer.get_free_buf_space(),
+		[&](auto& data) { return format(impl::format_buf_callback, &data, format_str, args...); }
+	);
+
+	buf_printer.reduce(size);
+
+	return size;
 }
 
 // Print integer as decimal value calling callback for each character

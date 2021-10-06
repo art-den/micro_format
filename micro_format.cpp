@@ -545,7 +545,7 @@ struct PrintFloatData
 
 static void gather_data_to_print_float(FloatType value, int precision, bool upper_case, PrintFloatData &result)
 {
-	if (value != value) // nan
+	if (isnan(value))
 	{
 		result.nan_text = upper_case ? "NAN" : "nan";
 		return;
