@@ -109,7 +109,7 @@ static void put_char(DstData& dst, char chr)
 		++dst.chars_printed;
 }
 
-static void print_raw_string(DstData& dst, const char *text)
+static void print_raw_string(DstData& dst, const volatile char *text)
 {
 	while (*text)
 		put_char(dst, *text++);
@@ -401,7 +401,14 @@ static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& form
 	}
 }
 
-static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const char* str, bool is_negative)
+static int strlen(const volatile char* str)
+{
+	int result = 0;
+	while (*str++) result++;
+	return result;
+}
+
+static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const volatile char* str, bool is_negative)
 {
 	int len = strlen(str);
 	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
@@ -480,7 +487,7 @@ static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value
 		print_uint_generic(ctx, format_spec, (unsigned)value, false);
 }
 
-static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const char* str)
+static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const volatile char* str)
 {
 	print_string_impl(ctx, format_spec, str, false);
 }
@@ -524,9 +531,9 @@ static void print_bool(FormatCtx& ctx, const FormatSpec& format_spec, bool value
 		print_uint_generic(ctx, format_spec, (unsigned char)value, false);
 }
 
-static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, const void *pointer)
+static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, uintptr_t pointer)
 {
-	print_uint_generic(ctx, format_spec, (uintptr_t)pointer, false);
+	print_uint_generic(ctx, format_spec, pointer, false);
 }
 
 
@@ -686,39 +693,39 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 	switch (ctx.args[format_spec.index].type)
 	{
 	case FormatArgType::Char:
-		print_char(ctx, format_spec, *(const char*)arg_pointer);
+		print_char(ctx, format_spec, *(const volatile char*)arg_pointer);
 		break;
 
 	case FormatArgType::UChar:
-		print_char(ctx, format_spec, *(const unsigned char*)arg_pointer);
+		print_char(ctx, format_spec, *(const volatile unsigned char*)arg_pointer);
 		break;
 
 	case FormatArgType::Short:
-		print_int(ctx, format_spec, *(const short*)arg_pointer);
+		print_int(ctx, format_spec, *(const volatile short*)arg_pointer);
 		break;
 
 	case FormatArgType::UShort:
-		print_uint(ctx, format_spec, *(const unsigned short*)arg_pointer);
+		print_uint(ctx, format_spec, *(const volatile unsigned short*)arg_pointer);
 		break;
 
 	case FormatArgType::Int:
-		print_int(ctx, format_spec, *(const int*)arg_pointer);
+		print_int(ctx, format_spec, *(const volatile int*)arg_pointer);
 		break;
 
 	case FormatArgType::UInt:
-		print_uint(ctx, format_spec, *(const unsigned int*)arg_pointer);
+		print_uint(ctx, format_spec, *(const volatile unsigned int*)arg_pointer);
 		break;
 
 	case FormatArgType::Long:
-		print_int(ctx, format_spec, *(const long*)arg_pointer);
+		print_int(ctx, format_spec, *(const volatile long*)arg_pointer);
 		break;
 
 	case FormatArgType::ULong:
-		print_uint(ctx, format_spec, *(const unsigned long*)arg_pointer);
+		print_uint(ctx, format_spec, *(const volatile unsigned long*)arg_pointer);
 		break;
 
 	case FormatArgType::Bool:
-		print_bool(ctx, format_spec, *(const bool*)arg_pointer);
+		print_bool(ctx, format_spec, *(const volatile bool*)arg_pointer);
 		break;
 
 	case FormatArgType::CharPtr:
@@ -726,7 +733,7 @@ static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec
 		break;
 
 	case FormatArgType::Pointer:
-		print_pointer(ctx, format_spec, arg_pointer);
+		print_pointer(ctx, format_spec, (uintptr_t)arg_pointer);
 		break;
 
 #if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)

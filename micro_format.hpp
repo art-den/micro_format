@@ -67,7 +67,7 @@ enum class FormatArgType : uint8_t
 
 struct FormatArg
 {
-	const void* pointer = nullptr;
+	const volatile void* pointer = nullptr;
 	FormatArgType type = {};
 
 	FormatArg(const char           &v) : pointer(&v), type(FormatArgType::Char) {}
@@ -80,15 +80,15 @@ struct FormatArg
 	FormatArg(const unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
 	FormatArg(const bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
 
-	FormatArg(const volatile char           &v) : pointer((const void*)&v), type(FormatArgType::Char) {}
-	FormatArg(const volatile unsigned char  &v) : pointer((const void*)&v), type(FormatArgType::UChar) {}
-	FormatArg(const volatile short          &v) : pointer((const void*)&v), type(FormatArgType::Short) {}
-	FormatArg(const volatile unsigned short &v) : pointer((const void*)&v), type(FormatArgType::UShort) {}
-	FormatArg(const volatile int            &v) : pointer((const void*)&v), type(FormatArgType::Int) {}
-	FormatArg(const volatile unsigned int   &v) : pointer((const void*)&v), type(FormatArgType::UInt) {}
-	FormatArg(const volatile long           &v) : pointer((const void*)&v), type(FormatArgType::Long) {}
-	FormatArg(const volatile unsigned long  &v) : pointer((const void*)&v), type(FormatArgType::ULong) {}
-	FormatArg(const volatile bool           &v) : pointer((const void*)&v), type(FormatArgType::Bool) {}
+	FormatArg(const volatile char           &v) : pointer(&v), type(FormatArgType::Char) {}
+	FormatArg(const volatile unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
+	FormatArg(const volatile short          &v) : pointer(&v), type(FormatArgType::Short) {}
+	FormatArg(const volatile unsigned short &v) : pointer(&v), type(FormatArgType::UShort) {}
+	FormatArg(const volatile int            &v) : pointer(&v), type(FormatArgType::Int) {}
+	FormatArg(const volatile unsigned int   &v) : pointer(&v), type(FormatArgType::UInt) {}
+	FormatArg(const volatile long           &v) : pointer(&v), type(FormatArgType::Long) {}
+	FormatArg(const volatile unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
+	FormatArg(const volatile bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
 
 
 	// nullptr as default parameter is used to create one element array args_arr if arguments is empty
@@ -101,12 +101,12 @@ struct FormatArg
 	FormatArg(const volatile T* v) : pointer(v), type(FormatArgType::Pointer) {}
 
 #if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
-	FormatArg(const float          &v) : pointer(&v), type(FormatArgType::Float) {}
-	FormatArg(const volatile float          &v) : pointer((const void*)&v), type(FormatArgType::Float) {}
+	FormatArg(const float &v) : pointer(&v), type(FormatArgType::Float) {}
+	FormatArg(const volatile float &v) : pointer((const void*)&v), type(FormatArgType::Float) {}
 #endif
 #if defined (MICRO_FORMAT_DOUBLE)
-	FormatArg(const double         &v) : pointer(&v), type(FormatArgType::Double) {}
-	FormatArg(const volatile double& v) : pointer((const void*)&v), type(FormatArgType::Double) {}
+	FormatArg(const double &v) : pointer(&v), type(FormatArgType::Double) {}
+	FormatArg(const volatile double &v) : pointer((const void*)&v), type(FormatArgType::Double) {}
 #endif
 #if defined(MICRO_FORMAT_INT64)
 	FormatArg(const volatile long long& v) : pointer((const void*)&v), type(FormatArgType::LLong) {}
