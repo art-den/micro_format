@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <limits.h>
 
 #include <boost/locale.hpp>
 
@@ -118,6 +119,14 @@ static void test_integer()
 	test_eq(" 123",   "{: }", 123);
 	test_eq("-123",   "{: }", -123);
 
+#ifdef MICRO_FORMAT_INT64
+	test_eq("18446744073709551615", "{:}", UINT64_MAX);
+	test_eq("9223372036854775807", "{:}", INT64_MAX);
+	test_eq("-9223372036854775808", "{:}", INT64_MIN);
+#endif
+	test_eq("4294967295", "{:}", UINT32_MAX);
+	test_eq("2147483647", "{:}", INT32_MAX);
+	test_eq("-2147483648", "{:}", INT32_MIN);
 
 	// hex
 
@@ -140,6 +149,10 @@ static void test_integer()
 	test_eq("  123   ", "{:^8x}", 0x123);
 	test_eq("  -123  ", "{:^8x}", -0x123);
 
+#ifdef MICRO_FORMAT_INT64
+	test_eq("ffffffffffffffff", "{:x}", UINT64_MAX);
+#endif
+	test_eq("ffffffff", "{:x}", UINT32_MAX);
 
 	// binary
 
@@ -154,6 +167,10 @@ static void test_integer()
 	test_eq("0011001100",  "{:010b}", 0b11001100);
 	test_eq("  11001100",  "{:10b}", 0b11001100);
 
+#ifdef MICRO_FORMAT_INT64
+	test_eq("1111111111111111111111111111111111111111111111111111111111111111", "{:b}", UINT64_MAX);
+#endif
+	test_eq("11111111111111111111111111111111", "{:b}", UINT32_MAX);
 
 	// octal
 
@@ -163,11 +180,14 @@ static void test_integer()
 	test_eq("   1234567", "{:10o}", 01234567);
 	test_eq("  -1234567", "{:10o}", -01234567);
 
+#ifdef MICRO_FORMAT_INT64
+	test_eq("1777777777777777777777", "{:o}", UINT64_MAX);
+#endif
+	test_eq("37777777777", "{:o}", UINT32_MAX);
 
 	// to char
 
 	test_eq("AB", "{:c}{:c}", 65, 66);
-
 
 	// errors
 

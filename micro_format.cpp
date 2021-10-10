@@ -425,17 +425,62 @@ static void print_char_impl(FormatCtx& ctx, const FormatSpec& format_spec, char 
 
 static void print_uint_impl(DstData& dst, UIntType value, unsigned base, bool upper_case)
 {
-	if (value >= base)
-		print_uint_impl(dst, value / base, base, upper_case);
+	UIntType div_value = 0;
 
-	unsigned value_to_print = value % base;
+	switch (base)
+	{
+	case 2:
+#ifdef MICRO_FORMAT_INT64 
+		div_value = 1ULL << 63;
+#else
+		div_value = 1UL << 31;
+#endif
+		break;
 
-	char char_to_print =
-		(value_to_print < 10)
-		? (value_to_print + '0')
-		: (value_to_print - 10 + (upper_case ? 'A' : 'a'));
+	case 8:
+#ifdef MICRO_FORMAT_INT64 
+		div_value = 1LL << (3 * 21);
+#else
+		div_value = 3UL << (3 * 10);
+#endif
+		break;
 
-	put_char(dst, char_to_print);
+	case 10:
+#ifdef MICRO_FORMAT_INT64 
+		div_value = 10'000'000'000'000'000'000ULL;
+#else
+		div_value = 1'000'000'000UL;
+#endif
+		break;
+
+	case 16:
+#ifdef MICRO_FORMAT_INT64 
+		div_value = 1ULL << (4 * 15);
+#else
+		div_value = 1UL << (4 * 7);
+#endif
+		break;
+	}
+
+	while ((div_value > value) && (div_value >= base))
+		div_value /= base;
+
+	for (;;)
+	{
+		unsigned value_to_print = (unsigned)(value / div_value);
+
+		char char_to_print =
+			(value_to_print < 10)
+			? (value_to_print + '0')
+			: (value_to_print - 10 + (upper_case ? 'A' : 'a'));
+
+		put_char(dst, char_to_print);
+
+		value -= value_to_print * div_value;
+		div_value /= base;
+
+		if (div_value == 0) break;
+	}
 }
 
 static int find_uint_len(UIntType value, unsigned base)
