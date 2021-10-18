@@ -894,16 +894,17 @@ bool utf8_char_callback(void* data, char chr)
 			r->count = 0;
 			r->chars_printed++;
 		}
-
-		r->character <<= 6;
-		r->character |= (chr & 0b00111111);
-
-		r->count--;
-
-		if (r->count == 0)
+		else
 		{
-			ok = r->cb(r->cb_data, r->character);
-			r->chars_printed++;
+			r->character <<= 6;
+			r->character |= (chr & 0b00111111);
+			r->count--;
+
+			if (r->count == 0)
+			{
+				ok = r->cb(r->cb_data, r->character);
+				r->chars_printed++;
+			}
 		}
 	}
 

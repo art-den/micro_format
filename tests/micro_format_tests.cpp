@@ -14,14 +14,14 @@ static const std::string error_str = "{{error}}";
 template <typename ... Args>
 void test_eq(const std::string &desired, const char *format_str, const Args& ... args)
 {
-	// multibyte...
-
 	char result[256] = {};
 	mf::format(result, format_str, args...);
 	assert(desired == result);
+}
 
-	// unicode...
-
+template <typename ... Args>
+void test_eq_unicode(const std::string& desired, const char* format_str, const Args& ... args)
+{
 	std::wstring wstr;
 
 	auto add_wide_char_cb = [](void* data, mf::WideChar chr)
@@ -452,10 +452,14 @@ static void test_print_to_buffer()
 
 static void test_utf8()
 {
-	test_eq(u8"Русский текст",                u8"Русский текст");
-	test_eq(u8"日本語テキスト",                 u8"日本語テキスト");
-	test_eq(u8"Русский текст 日本語テキスト",   u8"Русский текст {}", u8"日本語テキスト");
-	test_eq(u8"-Русский текст-日本語テキスト-", "-{}-{}-", u8"Русский текст", u8"日本語テキスト");
+	// correct sequenses
+	test_eq_unicode(u8"Русский текст",                u8"Русский текст");
+	test_eq_unicode(u8"日本語テキスト",                 u8"日本語テキスト");
+	test_eq_unicode(u8"Русский текст 日本語テキスト",   u8"Русский текст {}", u8"日本語テキスト");
+	test_eq_unicode(u8"-Русский текст-日本語テキスト-", "-{}-{}-", u8"Русский текст", u8"日本語テキスト");
+
+	// wrong sequenses
+	test_eq_unicode("before ? after", "before \xC0\xC1 after");
 }
 
 int main()
