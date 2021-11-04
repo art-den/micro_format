@@ -45,75 +45,59 @@ namespace impl {
 	using FloatType = float;
 #endif
 
+#if defined (MICRO_FORMAT_INT64)
+	using UIntType = unsigned long long;
+	using IntType = long long;
+#else
+	using UIntType = unsigned long;
+	using IntType = long;
+#endif
+
 enum class FormatArgType : uint8_t
 {
 	Undef,
 	Char,
 	UChar,
-	Short,
-	UShort,
 	Int,
 	UInt,
-	Long,
-	ULong,
 	Bool,
 	CharPtr,
 	Pointer,
-	Float,
-	Double,
-	LLong,
-	ULLong,
+	Float
 };
 
 struct FormatArg
 {
-	const volatile void* pointer = nullptr;
+	union
+	{
+		IntType i;
+		UIntType u;
+		uintptr_t p;
+#if defined(MICRO_FORMAT_DOUBLE)
+		double f;
+#elif defined(MICRO_FORMAT_FLOAT)
+		float f;
+#endif
+	} value;
 	FormatArgType type = {};
 
-	FormatArg(const char           &v) : pointer(&v), type(FormatArgType::Char) {}
-	FormatArg(const unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
-	FormatArg(const short          &v) : pointer(&v), type(FormatArgType::Short) {}
-	FormatArg(const unsigned short &v) : pointer(&v), type(FormatArgType::UShort) {}
-	FormatArg(const int            &v) : pointer(&v), type(FormatArgType::Int) {}
-	FormatArg(const unsigned int   &v) : pointer(&v), type(FormatArgType::UInt) {}
-	FormatArg(const long           &v) : pointer(&v), type(FormatArgType::Long) {}
-	FormatArg(const unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
-	FormatArg(const bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
+	FormatArg(char          v) : type(FormatArgType::Char) { value.i = v; }
+	FormatArg(unsigned char v) : type(FormatArgType::UChar) { value.u = v; }
+	FormatArg(int           v) : type(FormatArgType::Int) { value.i = v; }
+	FormatArg(unsigned      v) : type(FormatArgType::UInt) { value.u = v; }
+	FormatArg(IntType       v) : type(FormatArgType::Int) { value.i = v; }
+	FormatArg(UIntType      v) : type(FormatArgType::UInt) { value.u = v; }
+	FormatArg(bool          v) : type(FormatArgType::Bool) { value.u = v ? 1 : 0; }
+	FormatArg(const char*   v) : type(FormatArgType::CharPtr) { value.p = (uintptr_t)v; }
+	FormatArg(const void*   v) : type(FormatArgType::Pointer) { value.p = (uintptr_t)v; }
 
-	FormatArg(const volatile char           &v) : pointer(&v), type(FormatArgType::Char) {}
-	FormatArg(const volatile unsigned char  &v) : pointer(&v), type(FormatArgType::UChar) {}
-	FormatArg(const volatile short          &v) : pointer(&v), type(FormatArgType::Short) {}
-	FormatArg(const volatile unsigned short &v) : pointer(&v), type(FormatArgType::UShort) {}
-	FormatArg(const volatile int            &v) : pointer(&v), type(FormatArgType::Int) {}
-	FormatArg(const volatile unsigned int   &v) : pointer(&v), type(FormatArgType::UInt) {}
-	FormatArg(const volatile long           &v) : pointer(&v), type(FormatArgType::Long) {}
-	FormatArg(const volatile unsigned long  &v) : pointer(&v), type(FormatArgType::ULong) {}
-	FormatArg(const volatile bool           &v) : pointer(&v), type(FormatArgType::Bool) {}
-
-
-	// nullptr as default parameter is used to create one element array args_arr if arguments is empty
-	FormatArg(const char  *v = nullptr) : pointer(v),  type(FormatArgType::CharPtr) {}
-
-	template <typename T>
-	FormatArg(const T *v) : pointer(v), type(FormatArgType::Pointer) {}
-
-	template <typename T>
-	FormatArg(const volatile T* v) : pointer(v), type(FormatArgType::Pointer) {}
-
-#if defined (MICRO_FORMAT_FLOAT) || defined (MICRO_FORMAT_DOUBLE)
-	FormatArg(const float &v) : pointer(&v), type(FormatArgType::Float) {}
-	FormatArg(const volatile float &v) : pointer((const void*)&v), type(FormatArgType::Float) {}
+#if defined(MICRO_FORMAT_DOUBLE)
+	FormatArg(double v) : type(FormatArgType::Float) { value.f = v; }
+#elif defined(MICRO_FORMAT_FLOAT)
+	FormatArg(float v) : type(FormatArgType::Float) { value.f = v; }
 #endif
-#if defined (MICRO_FORMAT_DOUBLE)
-	FormatArg(const double &v) : pointer(&v), type(FormatArgType::Double) {}
-	FormatArg(const volatile double &v) : pointer((const void*)&v), type(FormatArgType::Double) {}
-#endif
-#if defined(MICRO_FORMAT_INT64)
-	FormatArg(const volatile long long& v) : pointer((const void*)&v), type(FormatArgType::LLong) {}
-	FormatArg(const long long& v) : pointer(&v), type(FormatArgType::LLong) {}
-	FormatArg(const volatile unsigned long long& v) : pointer((const void*)&v), type(FormatArgType::ULLong) {}
-	FormatArg(const unsigned long long& v) : pointer(&v), type(FormatArgType::ULLong) {}
-#endif
+
+	FormatArg() : type(FormatArgType::Undef) { value.p = 0; }
 };
 
 struct DstData

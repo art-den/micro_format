@@ -37,14 +37,6 @@ namespace impl {
 #define MODF modff
 #endif
 
-#if defined (MICRO_FORMAT_INT64)
-	using UIntType = unsigned long long;
-	using IntType = long long;
-#else
-	using UIntType = unsigned long;
-	using IntType = long;
-#endif
-
 struct FormatSpecFlags
 {
 	uint8_t octothorp : 1;
@@ -68,19 +60,14 @@ struct FormatSpec
 static bool is_integer_arg_type(FormatArgType arg_type)
 {
 	return
-		(arg_type == FormatArgType::Short) ||
-		(arg_type == FormatArgType::UShort) ||
 		(arg_type == FormatArgType::Int) ||
-		(arg_type == FormatArgType::UInt) ||
-		(arg_type == FormatArgType::Long) ||
-		(arg_type == FormatArgType::ULong);
+		(arg_type == FormatArgType::UInt);
 }
 
 static bool is_float_arg_type(FormatArgType arg_type)
 {
 	return
-		(arg_type == FormatArgType::Float) ||
-		(arg_type == FormatArgType::Double);
+		(arg_type == FormatArgType::Float);
 }
 
 static bool is_char_arg_type(FormatArgType arg_type)
@@ -109,7 +96,7 @@ static void put_char(DstData& dst, char chr)
 		++dst.chars_printed;
 }
 
-static void print_raw_string(DstData& dst, const volatile char *text)
+static void print_raw_string(DstData& dst, const char *text)
 {
 	while (*text)
 		put_char(dst, *text++);
@@ -297,7 +284,6 @@ static void correct_format_specifier(FormatCtx& ctx, FormatSpec& format_spec)
 		break;
 
 	case FormatArgType::Float:
-	case FormatArgType::Double:
 		if (format_spec.precision == -1)
 			format_spec.precision = 6;
 		break;
@@ -393,14 +379,14 @@ static void print_sign_and_leading_spaces(FormatCtx& ctx, const FormatSpec& form
 	}
 }
 
-static int strlen(const volatile char* str)
+static int strlen(const char* str)
 {
 	int result = 0;
 	while (*str++) result++;
 	return result;
 }
 
-static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const volatile char* str, bool is_negative)
+static void print_string_impl(FormatCtx& ctx, const FormatSpec& format_spec, const char* str, bool is_negative)
 {
 	int len = strlen(str);
 	if (is_negative || (format_spec.sign == '+') || (format_spec.sign == ' ')) len++;
@@ -524,7 +510,7 @@ static void print_char(FormatCtx& ctx, const FormatSpec& format_spec, char value
 		print_uint_generic(ctx, format_spec, (unsigned)value, false);
 }
 
-static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const volatile char* str)
+static void print_string(FormatCtx& ctx, const FormatSpec& format_spec, const char* str)
 {
 	print_string_impl(ctx, format_spec, str, false);
 }
@@ -725,71 +711,41 @@ static void print_float(FormatCtx& ctx, const FormatSpec& format_spec, FloatType
 
 static void print_by_argument_type(FormatCtx& ctx, const FormatSpec& format_spec)
 {
-	auto arg_pointer = ctx.args[format_spec.index].pointer;
+	const auto &argr = ctx.args[format_spec.index];
 
 	switch (ctx.args[format_spec.index].type)
 	{
 	case FormatArgType::Char:
-		print_char(ctx, format_spec, *(const volatile char*)arg_pointer);
+		print_char(ctx, format_spec, (char)argr.value.i);
 		break;
 
 	case FormatArgType::UChar:
-		print_char(ctx, format_spec, *(const volatile unsigned char*)arg_pointer);
-		break;
-
-	case FormatArgType::Short:
-		print_int(ctx, format_spec, *(const volatile short*)arg_pointer);
-		break;
-
-	case FormatArgType::UShort:
-		print_uint(ctx, format_spec, *(const volatile unsigned short*)arg_pointer);
+		print_char(ctx, format_spec, (char)argr.value.u);
 		break;
 
 	case FormatArgType::Int:
-		print_int(ctx, format_spec, *(const volatile int*)arg_pointer);
+		print_int(ctx, format_spec, argr.value.i);
 		break;
 
 	case FormatArgType::UInt:
-		print_uint(ctx, format_spec, *(const volatile unsigned int*)arg_pointer);
-		break;
-
-	case FormatArgType::Long:
-		print_int(ctx, format_spec, *(const volatile long*)arg_pointer);
-		break;
-
-	case FormatArgType::ULong:
-		print_uint(ctx, format_spec, *(const volatile unsigned long*)arg_pointer);
+		print_uint(ctx, format_spec, argr.value.u);
 		break;
 
 	case FormatArgType::Bool:
-		print_bool(ctx, format_spec, *(const volatile bool*)arg_pointer);
+		print_bool(ctx, format_spec, argr.value.u != 0);
 		break;
 
 	case FormatArgType::CharPtr:
-		print_string(ctx, format_spec, (const volatile char*)arg_pointer);
+		print_string(ctx, format_spec, (const char*)argr.value.p);
 		break;
 
 	case FormatArgType::Pointer:
-		print_pointer(ctx, format_spec, (uintptr_t)arg_pointer);
+		print_pointer(ctx, format_spec, argr.value.p);
 		break;
 
 #if defined (MICRO_FORMAT_DOUBLE) || defined (MICRO_FORMAT_FLOAT)
 	case FormatArgType::Float:
-		print_float(ctx, format_spec, *(const float*)arg_pointer);
-		break;
-#endif
-#if defined (MICRO_FORMAT_DOUBLE)
-	case FormatArgType::Double:
-		print_float(ctx, format_spec, *(const double*)arg_pointer);
-		break;
-#endif
-#if defined (MICRO_FORMAT_INT64)
-	case FormatArgType::LLong:
-		print_int(ctx, format_spec, *(const long long*)arg_pointer);
-		break;
-
-	case FormatArgType::ULLong:
-		print_uint(ctx, format_spec, *(const unsigned long long*)arg_pointer);
+		print_float(ctx, format_spec, argr.value.f);
 		break;
 #endif
 	default:
