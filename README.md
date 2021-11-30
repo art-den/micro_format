@@ -50,7 +50,6 @@ size_t print_to_uart(const char* format, const Args& ... args)
     };
     return mf::format(uart_format_callback, nullptr, format, args...);
 }
-
 ...
 
 print_to_uart("Hello world!!!\n");

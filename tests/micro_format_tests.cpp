@@ -52,7 +52,15 @@ void test_cmp_printf(const char* format_str, double value)
 	char printf_buffer[256] = {};
 	sprintf_s(printf_buffer, fmt2.c_str(), value);
 
-	assert(strcmp(result, printf_buffer) == 0);
+	int res = strcmp(result, printf_buffer);
+	if (res != 0)
+	{
+		char long_printf_result[256] = {};
+		sprintf_s(long_printf_result, "%.20f", value);
+		char debug_result[256] = {};
+		mf::format(debug_result, fmt1.c_str(), value);
+	}
+	assert(res == 0);
 }
 
 static void test_common()
@@ -320,8 +328,12 @@ static void test_float()
 
 	// double
 
+
 	test_eq("1.200000", "{}", 1.2);
 	test_eq("-1.200000", "{}", -1.2);
+
+	test_eq("9.999999", "{}", 9.999999);
+	test_eq("0.999999", "{}", 0.999999);
 
 	test_eq("10000000000.0", "{:.1}", 10000000000.0);
 	test_eq("1000000000000000.0", "{:.1}", 1000000000000000.0);
@@ -345,7 +357,7 @@ static void test_float()
 	for (int64_t i = -10'000; i < 1'000'000'000; i += 10003)
 	{
 		double value = i / 13.777;
-		test_cmp_printf(".13", value);
+		test_cmp_printf(".11", value);
 	}
 
 	// errors

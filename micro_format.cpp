@@ -37,21 +37,21 @@ namespace impl {
 #define MODF modff
 #endif
 
-struct FormatSpecFlags
-{
-	uint8_t octothorp : 1;
-	uint8_t upper_case : 1;
-	uint8_t zero : 1;
-	uint8_t parsed_ok : 1;
-};
-
 struct FormatSpec
 {
+	struct SpecFlags
+	{
+		uint8_t octothorp : 1;
+		uint8_t upper_case : 1;
+		uint8_t zero : 1;
+		uint8_t parsed_ok : 1;
+	};
+
 	int width = -1;
 	int precision = -1;
 	int length = -1;
 	int index = -1;
-	FormatSpecFlags flags{};
+	SpecFlags flags{};
 	char align = 0; // '<', '^', '>'
 	char sign = 0;  // '+', '-', ' '
 	char format = 0;
@@ -564,7 +564,6 @@ static void print_pointer(FormatCtx& ctx, const FormatSpec& format_spec, uintptr
 
 struct PrintFloatData
 {
-	FloatType rounded_value = {};
 	FloatType positive_value = {};
 	FloatType round_div = {};
 	FloatType integral_div = {};
@@ -600,9 +599,7 @@ static void gather_data_to_print_float(FloatType value, int precision, bool uppe
 	result.round_div = (FloatType)1.0f;
 	for (int i = 0; i < precision; i++) result.round_div *= (FloatType)10.0f;
 
-	// do rounding
-
-	result.rounded_value = value + (FloatType)0.5f / result.round_div;
+	result.positive_value = value;
 
 	// calculate integral part len
 
@@ -624,15 +621,13 @@ static void gather_data_to_print_float(FloatType value, int precision, bool uppe
 	{
 		result.integral_len = 1;
 	}
-
-	result.positive_value = value;
 }
 
-static void printf_float_number(const PrintFloatData data, DstData &dst, int precision)
+static void printf_float_number(const PrintFloatData &data, DstData &dst, int precision)
 {
 	// print integral part
 
-	auto value = data.rounded_value;
+	auto value = data.positive_value + (FloatType)0.5f / data.round_div;
 	auto integral_len = data.integral_len;
 	auto integral_div = data.integral_div;
 	while (integral_len--)
