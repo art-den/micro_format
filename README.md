@@ -6,7 +6,7 @@
 ## Supported features
 * Presentations: `b`, `B`, `c`, `d`, `o`, `x`, `X`, `f`, `F`, `s`, `p`
 * Flags: `-`, `+`, ` `, `0`, `#`,  `<`, `^`, `>`
-* Argument position
+* Argument position (`{0}`, `{1}`, `{2:+}` etc)
 * Field width
 * `float` and `double` types are supported (`-inf`, `+inf` and `nan` also works)
 * Wrong type error detection
